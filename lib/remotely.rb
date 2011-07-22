@@ -1,42 +1,8 @@
 require "faraday"
 require "active_support/inflector"
-require "remotely/ext/hash"
+require "active_support/core_ext/hash/keys"
+require "remotely/model_struct"
 
-# = OMG Remotely!
-#
-# Remotely lets you specify associations for your models that should
-# be fetched from a remote API instead of the database.
-#
-# == Setup
-#
-# First thing to do is define your remote API's. You can define as many as
-# you want. Apps are how certain associations know where to fetch themselves
-# from.
-#
-#   # config/intitializers/remotely.rb
-#   Remotely.app :legsapp, "http://omgsomanylegs.com/api/v1"
-#
-# === Number of Apps Registered with Remotely
-#
-# If you only register a single app with Remotely, all remote associations
-# will try to be fetched through that app. In this case, you can omit the
-# `:app` parameter when defining your associations.
-#
-# If you register more than one app, each association will also need to
-# specify which app it should come from. Look at the next section for
-# information on defining that option.
-#
-# == Associations
-#
-# Remote associations are defined using `has_many_remote` in the same way
-# you would define a normal ActiveRecord association.
-#
-#   class Millepied < ActiveRecord::Base
-#     include Remotely
-#     has_many_remote :legs
-#   end
-#
-#
 module Remotely
   class << self; attr_accessor :apps, :connections end
 
@@ -46,6 +12,7 @@ module Remotely
   def self.app(name, url)
     @apps        ||= {}
     @connections ||= {}
+
     url = "http://#{url}" unless url =~ %r[^http://]
     @apps[name] = url
   end
@@ -69,8 +36,6 @@ module Remotely
       define_method(name)       { call_association(name, options)  }
       define_method("#{name}!") { call_association!(name, options) }
     end
-
-  private
 
     def add_remote_association(name, options)
       @remote_associations     ||= {}
@@ -118,9 +83,14 @@ module Remotely
   # Apps are set up via `Remotely.configure`.
   #
   def connection_for(options)
-    app = options[:app]
-    raise Exception, "Must specify the association's app." unless app
-    Remotely.connections[app] ||= Faraday.new(:url => Remotely.apps[app])
+    name, url = *app_for(options[:app])
+    raise Exception, "Must specify the association's app." unless name && url
+    Remotely.connections[name] ||= Faraday.new(:url => url)
+  end
+
+  def app_for(appname)
+    return Remotely.apps.to_a.flatten if Remotely.apps.size == 1
+    Remotely.apps.assoc(appname)
   end
 
   # Replaces `:id` in the `:path` options with this instance's
@@ -140,26 +110,7 @@ module Remotely
   #
   def parse(response)
     response = Yajl::Parser.parse(response)
-    response = connect_associations(response)
     return [] if response.empty?
-    response.map { |o| Struct.new(*o.symbolize_keys.keys).new(*o.values) }
+    response.map { |o| ModelStruct.new(o) }
   end
-
-  # Looks through the objects retrieved from the remote API for any
-  # attributes ending in "_id". If found, it'll attempt to find them
-  # via their corresponding model class.
-  #
-  # TODO: clean up; this is gross.
-  #
-  def connect_associations(response)
-    response.map do |object|
-      assocs  = Hash[object.keys.select { |k| k =~ /_id$/ }.map do |key|
-        no_id = key.gsub("_id", "")
-        klass = no_id.classify.constantize
-        [no_id, klass.find(object[key])]
-      end]
-      object.merge(assocs)
-    end
-  end
-
 end

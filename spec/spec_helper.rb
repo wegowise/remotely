@@ -2,6 +2,9 @@ require "remotely"
 require 'webmock/rspec'
 require "yajl"
 WebMock.disable_net_connect!
+class User
+  def self.find(*args) end
+end
 
 RSpec.configure do |c|
   c.before do

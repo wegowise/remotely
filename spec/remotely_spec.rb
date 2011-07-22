@@ -63,11 +63,11 @@ describe Remotely do
       resp.stub(:body) { "[{\"size\":17,\"width\":10}]" }
     end
 
-    it "returns an array of objects" do
+    it "is an array of objects" do
       model.wheels.should respond_to(:each)
     end
 
-    it "returns struct like objects" do
+    it "is an array of structs responding to the attributes returned" do
       model.wheels[0].should respond_to(:size)
     end
 
@@ -83,11 +83,16 @@ describe Remotely do
       model.wheels!
     end
 
-    it "connects associations on the client side" do
-      class User; end
+    it "doesn't connect client-side associations until they are accessed" do
+      resp.stub(:body) { "[{\"user_id\":1}]" }
+      User.should_not_receive(:find)
+      model.wheels
+    end
+
+    it "connects associations on the client side when accessed" do
       resp.stub(:body) { "[{\"user_id\":1}]" }
       User.should_receive(:find).with(1)
-      model.wheels
+      model.wheels[0].user
     end
   end
 end
