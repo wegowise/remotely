@@ -1,5 +1,5 @@
 module Remotely
-  class ModelStruct
+  class Model
     attr_accessor :attributes
 
     def initialize(attributes={})

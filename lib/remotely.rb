@@ -1,7 +1,7 @@
 require "faraday"
 require "active_support/inflector"
 require "active_support/core_ext/hash/keys"
-require "remotely/model_struct"
+require "remotely/model"
 
 module Remotely
   class << self; attr_accessor :apps, :connections end
@@ -12,7 +12,6 @@ module Remotely
   def self.app(name, url)
     @apps        ||= {}
     @connections ||= {}
-
     url = "http://#{url}" unless url =~ %r[^http://]
     @apps[name] = url
   end
@@ -111,6 +110,8 @@ module Remotely
   def parse(response)
     response = Yajl::Parser.parse(response)
     return [] if response.empty?
-    response.map { |o| ModelStruct.new(o) }
+    response.map { |o| Model.new(o) }
   end
 end
+
+ActiveRecord::Base.send(:include, Remotely)

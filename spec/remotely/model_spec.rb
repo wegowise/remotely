@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Remotely::ModelStruct do
-  subject { Remotely::ModelStruct.new(:name => "Fred", :user_id => 1) }
+describe Remotely::Model do
+  subject { Remotely::Model.new(:name => "Fred", :user_id => 1) }
 
   it "symbolizes keys" do
-    Remotely::ModelStruct.new("name" => "Fred").attributes.should == {:name => "Fred"}
+    Remotely::Model.new("name" => "Fred").attributes.should == {:name => "Fred"}
   end
 
   it "can be initialized with a hash of attribute/values" do

@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "ruby-debug19"
   gem.add_development_dependency "ruby-debug-completion"
 
-  gem.add_dependency "active_support"
+  gem.add_dependency "activesupport"
   gem.add_dependency "faraday"
   gem.add_dependency "yajl-ruby"
 end
