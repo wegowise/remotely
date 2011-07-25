@@ -31,16 +31,30 @@ module Remotely
     attr_accessor :remote_associations
 
     def has_many_remote(name, options={})
-      add_remote_association(name, options)
+      add_remote_association(:has_many, name, options)
       define_method(name)       { call_association(name, options)  }
       define_method("#{name}!") { call_association!(name, options) }
     end
 
-    def add_remote_association(name, options)
+    def has_one_remote(name, options={})
+      add_remote_association(:has_one, name, options)
+      define_method(name)       { call_association(name, options)  }
+      define_method("#{name}!") { call_association!(name, options) }
+    end
+
+    def add_remote_association(type, name, options)
       @remote_associations     ||= {}
-      @remote_associations[name] = {:path => "/#{name}"}.merge(options)
+      @remote_associations[name] = {:type => type}.merge(options)
     end
   end
+
+  # List of associations and the options passed when they were created
+  #
+  def remote_associations
+    self.class.remote_associations
+  end
+
+private
 
   # Returns a cached version of the association object, or fetches
   # it if it has not already been.
@@ -62,20 +76,30 @@ module Remotely
   # Retreives the association object from the remote API.
   #
   def fetch_association(name, options)
-    parse(connection_for(options).get(path_for(name)).body)
+    type     = remote_associations[name][:type]
+    path     = path_for(name, type)
+    response = connection_for(options).get(path)
+    parse(response.body, type)
   end
 
   # Determines the URI for an association object.
   #
-  def path_for(name)
-    replace_id_in_path(name)
-    remote_associations[name][:path] || "/#{name}"
+  def path_for(name, type)
+    replace_id_in_path!(name)
+    case type
+    when :has_many
+      remote_associations[name][:path] || has_many_default_path(name)
+    when :has_one
+      remote_associations[name][:path] || has_one_default_path(name)
+    end
   end
 
-  # List of associations and the options passed when they were created
-  #
-  def remote_associations
-    self.class.remote_associations
+  def has_many_default_path(name)
+    "/#{name}"
+  end
+
+  def has_one_default_path(name)
+    "/#{self.class.to_s.downcase.pluralize}/#{self.id}/#{name}"
   end
 
   # Creates or retreives the connection for a specific application.
@@ -99,7 +123,7 @@ module Remotely
   # this needs to happen the first time a remote association is
   # accessed. Prior to that there's no such things as an `id`.
   #
-  def replace_id_in_path(name)
+  def replace_id_in_path!(name)
     assoc = remote_associations[name]
     assoc[:path].gsub!(":id", id.to_s) if assoc[:path]
   end
@@ -107,11 +131,19 @@ module Remotely
   # Parses the JSON response and creates a Struct from it. Whatever
   # attributes the API returns if what gets set on the resulting object.
   #
-  def parse(response)
+  def parse(response, type)
     response = Yajl::Parser.parse(response)
     return [] if response.empty?
-    response.map { |o| Model.new(o) }
+
+    case type
+    when :has_many
+      response.map { |o| Model.new(o) }
+    when :has_one
+      Model.new(response)
+    end
   end
 end
 
-ActiveRecord::Base.send(:include, Remotely)
+module ActiveRecord
+  class Base; include Remotely; end
+end

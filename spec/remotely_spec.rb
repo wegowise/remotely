@@ -3,37 +3,25 @@ require "spec_helper"
 describe Remotely do
   class Truck; include Remotely; attr_accessor :id; end
 
-  let(:model) { Truck.new }
+  let(:model) { truck = Truck.new; truck.id = 2; truck }
   let(:conn)  { mock(Faraday) }
   let(:resp)  { mock.as_null_object }
 
   before do
     Remotely.reset!
-    Remotely.app :wheelapp, "localhost:5432"
-
     resp.stub(:body) { "[]" }
     conn.stub(:get)  { resp }
     Faraday.stub(:new).and_return(conn)
   end
 
-  it "stores app names and their urls" do
-    Remotely.app :importer, "localhost:1234"
-    Remotely.apps[:importer].should == "http://localhost:1234"
-  end
-
   describe "has_many_remote" do
     before do
+      Remotely.app :wheelapp,  "localhost:5432"
       Truck.has_many_remote :wheels, :app => :wheelapp, :path => "/trucks/:id/wheels"
-      model.id = 2
     end
 
     it "creates a method for each association" do
       model.should respond_to :wheels
-    end
-
-    it "defaults the path to /resource_name" do
-      Truck.has_many_remote :wheels
-      model.remote_associations[:wheels][:path].should == "/wheels"
     end
 
     it "takes the :path option as precedence" do
@@ -56,10 +44,42 @@ describe Remotely do
     end
   end
 
+  describe "has_one_remote" do
+    before do
+      Remotely.app :engineapp, "localhost:9876"
+      Truck.has_one_remote :engine, :app => :engineapp
+    end
+
+    it "creates a method for each association" do
+      model.should respond_to :engine
+    end
+
+    it "accesses the association directly" do
+      resp.stub(:body) { "{\"size\":\"2.5L\",\"hp\":\"300\"}" }
+      model.engine.size.should == "2.5L"
+    end
+
+    it "supports :id substitution for :path once called" do
+      Truck.has_one_remote :engine, :app => :engineapp, :path => "/trucks/:id/engine"
+      model.remote_associations[:engine][:path].should == "/trucks/:id/engine"
+      model.engine
+      model.remote_associations[:engine][:path].should == "/trucks/2/engine"
+    end
+
+    it "accepts the app where the association is found" do
+      model.remote_associations[:engine][:app].should == :engineapp
+    end
+
+    it "requests the full url" do
+      conn.should_receive(:get).with("/trucks/2/engine").and_return(resp)
+      model.engine
+    end
+  end
+
   describe "retreived objects" do
     before do
+      Remotely.app :wheelapp,  "localhost:5432"
       Truck.has_many_remote :wheels, :app => :wheelapp, :path => "/trucks/:id/wheels"
-      model.id = 2
       resp.stub(:body) { "[{\"size\":17,\"width\":10}]" }
     end
 
