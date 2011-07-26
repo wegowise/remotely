@@ -32,8 +32,13 @@ module Remotely
     end
 
     def method_missing(name, *args, &block)
-      return @attributes[name] if @attributes.include?(name)
-      super
+      if @attributes.include?(name)
+        @attributes[name]
+      elsif name =~ /(.*)\?$/ && @attributes.include?($1.to_sym)
+        !!@attributes[$1.to_sym]
+      else
+        super
+      end
     end
   end
 end

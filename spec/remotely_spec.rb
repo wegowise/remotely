@@ -1,7 +1,7 @@
 require "spec_helper"
 
 describe Remotely do
-  class Truck; include Remotely; attr_accessor :id; end
+  class Truck; include Remotely; attr_accessor :id, :owner_id; end
 
   let(:model) { truck = Truck.new; truck.id = 2; truck }
   let(:conn)  { mock(Faraday) }
@@ -12,6 +12,18 @@ describe Remotely do
     resp.stub(:body) { "[]" }
     conn.stub(:get)  { resp }
     Faraday.stub(:new).and_return(conn)
+  end
+
+  describe "associations" do
+    before do
+      Remotely.app :thingsapp,  "localhost:9999"
+    end
+
+    it "supports lambda :path argument and executes them on the model isntance" do
+      Truck.has_many_remote :things, :path => lambda { "/things/#{id}" }
+      model.things
+      model.remote_associations[:things][:path].should == "/things/2"
+    end
   end
 
   describe "has_many_remote" do
@@ -26,6 +38,7 @@ describe Remotely do
 
     it "takes the :path option as precedence" do
       Truck.has_many_remote :wheels, :path => "/grapes"
+      model.wheels
       model.remote_associations[:wheels][:path].should == "/grapes"
     end
 
@@ -35,6 +48,7 @@ describe Remotely do
     end
 
     it "accepts the app where the association is found" do
+      model.wheels
       model.remote_associations[:wheels][:app].should == :wheelapp
     end
 
@@ -61,18 +75,50 @@ describe Remotely do
 
     it "supports :id substitution for :path once called" do
       Truck.has_one_remote :engine, :app => :engineapp, :path => "/trucks/:id/engine"
-      model.remote_associations[:engine][:path].should == "/trucks/:id/engine"
       model.engine
       model.remote_associations[:engine][:path].should == "/trucks/2/engine"
     end
 
     it "accepts the app where the association is found" do
+      model.engine
       model.remote_associations[:engine][:app].should == :engineapp
     end
 
     it "requests the full url" do
       conn.should_receive(:get).with("/trucks/2/engine").and_return(resp)
       model.engine
+    end
+  end
+
+  describe "belongs_to_remote" do
+    before do
+      Remotely.app :ownerapp, "localhost:5555"
+      Truck.belongs_to_remote :owner, :app => :ownerapp, :path => "/owners/:owner_id"
+      model.owner_id = 4
+    end
+
+    it "creates a method for each association" do
+      model.should respond_to :owner
+    end
+
+    it "accesses the association directly" do
+      resp.stub(:body) { "{\"name\":\"Frank\"}" }
+      model.owner.name.should == "Frank"
+    end
+
+    it "supports :symbol substitution for :path once called" do
+      model.owner
+      model.remote_associations[:owner][:path].should == "/owners/4"
+    end
+
+    it "accepts the app where the association is found" do
+      model.owner
+      model.remote_associations[:owner][:app].should == :ownerapp
+    end
+
+    it "requests the full url" do
+      conn.should_receive(:get).with("/owners/4").and_return(resp)
+      model.owner
     end
   end
 

@@ -28,4 +28,8 @@ describe Remotely::Model do
     User.should_not_receive(:find)
     subject
   end
+
+  it "creates boolean methods for each attribute" do
+    subject.name?.should == true
+  end
 end

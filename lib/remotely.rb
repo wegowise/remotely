@@ -6,6 +6,8 @@ require "remotely/model"
 module Remotely
   class << self; attr_accessor :apps, :connections end
 
+  attr_accessor :remote_associations
+
   # Register an app and it's url with Remotely. Should be done
   # via `Remotely.configure`.
   #
@@ -28,33 +30,31 @@ module Remotely
   end
 
   module ClassMethods
-    attr_accessor :remote_associations
-
     def has_many_remote(name, options={})
-      add_remote_association(:has_many, name, options)
+      options.merge!(:type => :has_many)
       define_method(name)       { call_association(name, options)  }
       define_method("#{name}!") { call_association!(name, options) }
     end
 
     def has_one_remote(name, options={})
-      add_remote_association(:has_one, name, options)
+      options.merge!(:type => :has_one)
       define_method(name)       { call_association(name, options)  }
       define_method("#{name}!") { call_association!(name, options) }
     end
 
-    def add_remote_association(type, name, options)
-      @remote_associations     ||= {}
-      @remote_associations[name] = {:type => type}.merge(options)
+    def belongs_to_remote(name, options={})
+      options.merge!(:type => :belongs_to)
+      define_method(name)       { call_association(name, options)  }
+      define_method("#{name}!") { call_association!(name, options) }
     end
   end
 
-  # List of associations and the options passed when they were created
-  #
-  def remote_associations
-    self.class.remote_associations
-  end
-
 private
+
+  def add_remote_association(name, options)
+    @remote_associations     ||= {}
+    @remote_associations[name] = options
+  end
 
   # Returns a cached version of the association object, or fetches
   # it if it has not already been.
@@ -68,8 +68,8 @@ private
   # version exists of not.
   #
   def call_association!(name, options)
-    object = fetch_association(name, options)
-    instance_variable_set("@#{name}", object)
+    add_remote_association(name, options)
+    instance_variable_set("@#{name}", fetch_association(name, options))
     instance_variable_get("@#{name}")
   end
 
@@ -80,18 +80,16 @@ private
     path     = path_for(name, type)
     response = connection_for(options).get(path)
     parse(response.body, type)
+  rescue Exception
+    nil
   end
 
   # Determines the URI for an association object.
   #
   def path_for(name, type)
-    replace_id_in_path!(name)
-    case type
-    when :has_many
-      remote_associations[name][:path] || has_many_default_path(name)
-    when :has_one
-      remote_associations[name][:path] || has_one_default_path(name)
-    end
+    path = remote_associations[name][:path] || send(:"#{type}_default_path", name)
+    path = self.instance_exec(&path) if path.is_a?(Proc)
+    interpolate_attributes(path)
   end
 
   def has_many_default_path(name)
@@ -100,6 +98,18 @@ private
 
   def has_one_default_path(name)
     "/#{self.class.to_s.downcase.pluralize}/#{self.id}/#{name}"
+  end
+
+  def belongs_to_default_path(name)
+    if respond_to?(:"#{name}_id")
+      "/#{name.pluralize}/#{send("#{name}_id")}"
+    else
+      raise "Must specify path for belongs_to_remote associations."
+    end
+  end
+
+  def interpolate_attributes(path)
+    path.gsub(%r{:[^/]+}) { |m| public_send(m.gsub(":", "").to_sym).to_s }
   end
 
   # Creates or retreives the connection for a specific application.
@@ -116,18 +126,6 @@ private
     Remotely.apps.assoc(appname)
   end
 
-  # Replaces `:id` in the `:path` options with this instance's
-  # id.
-  #
-  # Since remote associations are declared from the class context,
-  # this needs to happen the first time a remote association is
-  # accessed. Prior to that there's no such things as an `id`.
-  #
-  def replace_id_in_path!(name)
-    assoc = remote_associations[name]
-    assoc[:path].gsub!(":id", id.to_s) if assoc[:path]
-  end
-
   # Parses the JSON response and creates a Struct from it. Whatever
   # attributes the API returns if what gets set on the resulting object.
   #
@@ -138,7 +136,7 @@ private
     case type
     when :has_many
       response.map { |o| Model.new(o) }
-    when :has_one
+    else
       Model.new(response)
     end
   end
