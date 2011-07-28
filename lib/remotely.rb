@@ -1,6 +1,7 @@
 require "faraday"
 require "active_support/inflector"
 require "active_support/core_ext/hash/keys"
+require "remotely/collection"
 require "remotely/model"
 
 module Remotely
@@ -101,11 +102,8 @@ private
   end
 
   def belongs_to_default_path(name)
-    if respond_to?(:"#{name}_id")
-      "/#{name.pluralize}/#{send("#{name}_id")}"
-    else
-      raise "Must specify path for belongs_to_remote associations."
-    end
+    raise "belongs_to_remote associations require :path." unless respond_to?(:"#{name}_id")
+    "/#{name.pluralize}/#{send("#{name}_id")}"
   end
 
   def interpolate_attributes(path)
@@ -135,7 +133,7 @@ private
 
     case type
     when :has_many
-      response.map { |o| Model.new(o) }
+      Collection.new(response.map { |o| Model.new(o) })
     else
       Model.new(response)
     end

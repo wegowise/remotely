@@ -21,8 +21,8 @@ describe Remotely do
 
     it "supports lambda :path argument and executes them on the model isntance" do
       Truck.has_many_remote :things, :path => lambda { "/things/#{id}" }
+      conn.should_receive(:get).with("/things/2")
       model.things
-      model.remote_associations[:things][:path].should == "/things/2"
     end
   end
 
@@ -43,8 +43,8 @@ describe Remotely do
     end
 
     it "supports :id substitution for :path once called" do
+      conn.should_receive(:get).with("/trucks/2/wheels")
       model.wheels
-      model.remote_associations[:wheels][:path].should == "/trucks/2/wheels"
     end
 
     it "accepts the app where the association is found" do
@@ -75,8 +75,8 @@ describe Remotely do
 
     it "supports :id substitution for :path once called" do
       Truck.has_one_remote :engine, :app => :engineapp, :path => "/trucks/:id/engine"
+      conn.should_receive(:get).with("/trucks/2/engine")
       model.engine
-      model.remote_associations[:engine][:path].should == "/trucks/2/engine"
     end
 
     it "accepts the app where the association is found" do
@@ -107,8 +107,8 @@ describe Remotely do
     end
 
     it "supports :symbol substitution for :path once called" do
+      conn.should_receive(:get).with("/owners/4")
       model.owner
-      model.remote_associations[:owner][:path].should == "/owners/4"
     end
 
     it "accepts the app where the association is found" do

@@ -7,21 +7,23 @@ module Remotely
       connect_associations!
     end
 
-    def connect_associations!
-      @attributes.each { |key, id| association(key, id) if key =~ /_id$/ }
-    end
-
     def respond_to?(name)
       @attributes.include?(name) or super
     end
 
   private
 
+    def metaclass
+      (class << self; self; end)
+    end
+
+    def connect_associations!
+      @attributes.each { |key, id| association(key, id) if key =~ /_id$/ }
+    end
+
     def association(key, id)
       name = key.to_s.gsub("_id", "")
-      (class << self; self; end).send(:define_method, name) do
-        fetch_association(name, id)
-      end
+      metaclass.send(:define_method, name) { fetch_association(name, id) }
     end
 
     def fetch_association(name, id)
