@@ -1,12 +1,13 @@
 require "faraday"
 require "active_support/inflector"
+require "active_support/concern"
 require "active_support/core_ext/hash/keys"
+require "active_model/naming"
 require "remotely/collection"
 require "remotely/model"
 
 module Remotely
   class << self; attr_accessor :apps, :connections end
-
   attr_accessor :remote_associations
 
   # Register an app and it's url with Remotely. Should be done
@@ -80,7 +81,7 @@ private
     type     = remote_associations[name][:type]
     path     = path_for(name, type)
     response = connection_for(options).get(path)
-    parse(response.body, type)
+    parse(response.body, name, type)
   rescue Exception
     nil
   end
@@ -127,19 +128,19 @@ private
   # Parses the JSON response and creates a Struct from it. Whatever
   # attributes the API returns if what gets set on the resulting object.
   #
-  def parse(response, type)
+  def parse(response, name, type)
     response = Yajl::Parser.parse(response)
     return [] if response.empty?
 
     case type
     when :has_many
-      Collection.new(response.map { |o| Model.new(o) })
+      Collection.new(response.map { |o| Model.create(name, o) })
     else
-      Model.new(response)
+      Model.create(name, response)
     end
   end
 end
 
 module ActiveRecord
-  class Base; include Remotely; end
+  class Base; include Remotely end
 end

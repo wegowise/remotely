@@ -3,6 +3,26 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe Remotely::Model do
   subject { Remotely::Model.new("name" => "Fred", "user_id" => 1) }
 
+  describe ".create" do
+    let(:person) { Remotely::Model.create(:person, name: "Sven") }
+
+    before do
+      person
+    end
+
+    it "creates dynamically create model classes" do
+      Person.ancestors.should include(Remotely::Model)
+    end
+
+    it "gives the model class a model_name property" do
+      person.class.model_name.should == "Person"
+    end
+
+    it "supports #to_json" do
+      person.to_json.should == '{"name":"Sven"}'
+    end
+  end
+
   it "symbolizes keys" do
     subject.attributes.should == {:name => "Fred", :user_id => 1}
   end

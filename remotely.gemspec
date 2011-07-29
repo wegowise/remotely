@@ -21,7 +21,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "ruby-debug-completion"
 
   gem.add_dependency "activesupport"
-  gem.add_dependency "i18n" # ActiveSupport needs it
+  gem.add_dependency "activemodel"
+  gem.add_dependency "activerecord"
   gem.add_dependency "faraday"
   gem.add_dependency "yajl-ruby"
 end
