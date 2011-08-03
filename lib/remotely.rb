@@ -1,14 +1,24 @@
 require "faraday"
 require "active_support/inflector"
 require "active_support/concern"
+require "active_support/json"
 require "active_support/core_ext/hash/keys"
-require "active_model/naming"
+require "active_model"
+
+require "remotely/ext/url"
 require "remotely/collection"
 require "remotely/model"
 
 module Remotely
+  class RemotelyError < StandardError; end
+
   class << self; attr_accessor :apps, :connections end
+
   attr_accessor :remote_associations
+
+  def self.configure(&block)
+    self.instance_eval(&block)
+  end
 
   # Register an app and it's url with Remotely. Should be done
   # via `Remotely.configure`.
@@ -16,8 +26,10 @@ module Remotely
   def self.app(name, url)
     @apps        ||= {}
     @connections ||= {}
+
     url = "http://#{url}" unless url =~ %r[^http://]
     @apps[name] = url
+    @connections[name] = Faraday.new(:url => url)
   end
 
   # Clear all apps and connections.
@@ -33,21 +45,32 @@ module Remotely
 
   module ClassMethods
     def has_many_remote(name, options={})
-      options.merge!(:type => :has_many)
-      define_method(name)       { call_association(name, options)  }
-      define_method("#{name}!") { call_association!(name, options) }
+      define_methods(name, options.merge(:type => :has_many))
     end
 
     def has_one_remote(name, options={})
-      options.merge!(:type => :has_one)
-      define_method(name)       { call_association(name, options)  }
-      define_method("#{name}!") { call_association!(name, options) }
+      define_methods(name, options.merge(:type => :has_one))
     end
 
     def belongs_to_remote(name, options={})
-      options.merge!(:type => :belongs_to)
-      define_method(name)       { call_association(name, options)  }
+      define_methods(name, options.merge(:type => :belongs_to))
+    end
+
+  private
+
+    def define_methods(name, options)
+      create_model_class(name)
+      define_method(name)       { |reload=false| call_association(reload, name, options)  }
       define_method("#{name}!") { call_association!(name, options) }
+    end
+
+    def create_model_class(name)
+      klassname = name.to_s.classify
+      return if Object.const_defined?(klassname)
+
+      klass = Class.new(Remotely::Model)
+      klass.send(:extend, ActiveModel::Naming)
+      Object.const_set(klassname, klass)
     end
   end
 
@@ -61,8 +84,8 @@ private
   # Returns a cached version of the association object, or fetches
   # it if it has not already been.
   #
-  def call_association(name, options)
-    call_association!(name, options) unless instance_variable_defined?("@#{name}")
+  def call_association(reload, name, options)
+    call_association!(name, options) if reload || !instance_variable_defined?("@#{name}")
     instance_variable_get("@#{name}")
   end
 
@@ -82,7 +105,7 @@ private
     path     = path_for(name, type)
     response = connection_for(options).get(path)
     parse(response.body, name, type)
-  rescue Exception
+  rescue RemotelyError
     nil
   end
 
@@ -108,7 +131,12 @@ private
   end
 
   def interpolate_attributes(path)
-    path.gsub(%r{:[^/]+}) { |m| public_send(m.gsub(":", "").to_sym).to_s }
+    path.gsub(%r{:[^/]+}) do |m|
+      attribute = m.gsub(":", "").to_sym
+      value     = public_send(attribute)
+      raise RemotelyError if value.nil?
+      value
+    end
   end
 
   # Creates or retreives the connection for a specific application.
@@ -125,18 +153,23 @@ private
     Remotely.apps.assoc(appname)
   end
 
+  def class_for(name)
+    name.to_s.classify.constantize
+  end
+
   # Parses the JSON response and creates a Struct from it. Whatever
   # attributes the API returns if what gets set on the resulting object.
   #
   def parse(response, name, type)
     response = Yajl::Parser.parse(response)
     return [] if response.empty?
+    klass = class_for(name)
 
     case type
     when :has_many
-      Collection.new(response.map { |o| Model.create(name, o) })
+      Collection.new(response.map { |o| klass.new(o) })
     else
-      Model.create(name, response)
+      klass.new(response)
     end
   end
 end

@@ -1,9 +1,12 @@
 require "spec_helper"
 
 describe Remotely do
-  class Truck; include Remotely; attr_accessor :id, :owner_id; end
+  class Truck
+    include Remotely
+    attr_accessor :id, :owner_id
+  end
 
-  let(:model) { truck = Truck.new; truck.id = 2; truck }
+  let(:model) { Truck.new.tap { |t| t.id = 2 }}
   let(:conn)  { mock(Faraday) }
   let(:resp)  { mock.as_null_object }
 
@@ -12,6 +15,11 @@ describe Remotely do
     resp.stub(:body) { "[]" }
     conn.stub(:get)  { resp }
     Faraday.stub(:new).and_return(conn)
+  end
+
+  it "is configurable" do
+    Remotely.configure { app :configapp, "localhost:2222" }
+    Remotely.connections.should include(:configapp)
   end
 
   describe "associations" do
