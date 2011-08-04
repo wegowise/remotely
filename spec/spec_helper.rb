@@ -3,10 +3,7 @@ require 'webmock/rspec'
 require "yajl"
 WebMock.disable_net_connect!
 require "support/webmock"
-
-class User
-  def self.find(*args) end
-end
+require "support/test_classes"
 
 RSpec.configure do |c|
   c.before do

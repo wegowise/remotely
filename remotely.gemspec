@@ -16,6 +16,8 @@ Gem::Specification.new do |gem|
   gem.version       = Remotely::VERSION
 
   gem.add_development_dependency "rspec", "~> 2.6.0"
+  gem.add_development_dependency "ZenTest"
+  gem.add_development_dependency "autotest-growl"
   gem.add_development_dependency "webmock"
   gem.add_development_dependency "ruby-debug19"
   gem.add_development_dependency "ruby-debug-completion"

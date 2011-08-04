@@ -1,19 +1,10 @@
 require File.dirname(__FILE__) + '/../spec_helper'
 
 describe Remotely::Model do
-  class Adventure < Remotely::Model
-    app :adventure_app
-    uri "/adventures"
-  end
+  let(:app)        { "http://localhost:1234" }
+  let(:attributes) { {id: 1, name: "Marceline Quest", type: "MATHEMATICAL!"} }
 
-  let(:app)        { "http://localhost:5555" }
-  let(:attributes) { {id: 1, name: "Marceline Quest", type: "MATHEMATICAL!", user_id: 2} }
-
-  subject   { Adventure.new(attributes) }
-
-  before do
-    Remotely.app :adventure_app, app
-  end
+  subject { Adventure.new(attributes) }
 
   describe ".find" do
     it "retreives an individual resource" do
@@ -95,6 +86,31 @@ describe Remotely::Model do
     end
   end
 
+  describe "associations" do
+    let(:member) { Member.new(id: 2, name_id: 1) }
+
+    it "creates associations when instantiated" do
+      member.should respond_to :name
+    end
+
+    it "fetches the resource when accessed" do
+      Name.should_receive(:find).with(1)
+      member.name
+    end
+
+    it "doesn't fetch a resource twice" do
+      Name.should_receive(:find).with(1).once
+      member.name
+      member.name
+    end
+
+    it "reloads association objects" do
+      Name.should_receive(:find).with(1).twice
+      member.name
+      member.name(true)
+    end
+  end
+
   it "sets the app it belongs to" do
     Adventure.app.should == :adventure_app
   end
@@ -108,7 +124,12 @@ describe Remotely::Model do
   end
 
   it "supports ActiveModel::Naming methods" do
-    Adventure.model_name.should == "Adventure"
+    Adventure.model_name.element.should == "adventure"
+  end
+
+  it "is reloadable" do
+    subject.reload
+    a_request(:get, "#{app}/adventures/1")
   end
 
   it "symbolizes attribute keys" do
@@ -131,20 +152,6 @@ describe Remotely::Model do
   it "is a new_record when no id exists" do
     subject.id = nil
     subject.should be_a_new_record
-  end
-
-  it "creates association methods" do
-    subject.should respond_to(:user)
-  end
-
-  it "finds the association when accessed" do
-    User.should_receive(:find).with(2)
-    subject.user
-  end
-
-  it "does not find the association when created" do
-    User.should_not_receive(:find)
-    subject
   end
 
   it "creates boolean methods for each attribute" do

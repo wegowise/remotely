@@ -1,5 +1,9 @@
 module Remotely
   class Model
+    extend ActiveModel::Naming
+    extend Forwardable
+    include Associations
+
     class << self
       # HTTP status codes that are represent successful requests
       SUCCESS_STATUSES = (200..299)
@@ -101,14 +105,15 @@ module Remotely
       # @return [Faraday::Connection] Connection to the remote API.
       #
       def connection
-        @connection ||= Faraday::Connection.new(Remotely.apps[app]) do |b|
+        address = Remotely.apps[app]
+        address = address + "http://" unless address =~ /^http/
+
+        @connection ||= Faraday::Connection.new(address) do |b|
           b.request :url_encoded
           b.request :json
           b.adapter :net_http
         end
       end
-
-    private
 
       # GET request.
       #
@@ -119,8 +124,9 @@ module Remotely
       #   is an array, Collection, if it's a hash, Model, otherwise it's the
       #   parsed response body.
       #
-      def get(uri, params={})
-        parse_response(connection.get { |req| req.url(uri, params) })
+      def get(uri, options={})
+        klass = options.delete(:class)
+        parse_response(connection.get { |req| req.url(uri, options) }, klass)
       end
 
       # POST request.
@@ -136,8 +142,9 @@ module Remotely
       #   is an array, Collection, if it's a hash, Model, otherwise it's the
       #   parsed response body.
       #
-      def post(uri, params={})
-        parse_response(connection.post(uri, params.to_json))
+      def post(uri, options={})
+        klass = options.delete(:class)
+        parse_response(connection.post(uri, Yajl::Encoder.encode(options)), klass)
       end
 
       # PUT request.
@@ -148,8 +155,8 @@ module Remotely
       # @return [Boolean] Was the request successful? (Resulted in a
       #   200-299 response code)
       #
-      def put(uri, params)
-        SUCCESS_STATUSES.include?(connection.put(uri, params.to_json).status)
+      def put(uri, options={})
+        SUCCESS_STATUSES.include?(connection.put(uri, Yajl::Encoder.encode(options)).status)
       end
 
       # DELETE request.
@@ -169,7 +176,7 @@ module Remotely
       # ------------+------------------+--------------
       # Status Code | Return Body Type | Return Value
       # ------------+------------------+--------------
-      #   >= 400    |      N/A         |    false
+      #   >= 400    |       N/A        |    false
       # ------------+------------------+--------------
       #   200-299   |      Array       |  Collection
       # ------------+------------------+--------------
@@ -184,42 +191,55 @@ module Remotely
       #   is an array, Collection, if it's a hash, Model, otherwise it's the
       #   parsed response body.
       #
-      def parse_response(response)
+      def parse_response(response, klass=nil)
         return false if response.status >= 400
 
-        body = Yajl::Parser.parse(response.body) rescue nil
+        body  = Yajl::Parser.parse(response.body) rescue nil
+        klass = (klass || self)
+
         case body
         when Array
-          Collection.new(body.map { |o| new(o) })
+          Collection.new(body.map { |o| klass.new(o) })
         when Hash
-          new(body)
+          klass.new(body)
         else
           body
         end
       end
     end
 
-    # Allows Rails to do all sorts of naming operations on the model.
-    # Used for setting `name`, `id`, `class` attributes on HTML elements
-    # when using form helpers.
-    extend ActiveModel::Naming
+    def_delegators :"self.class", :uri, :get
 
     # @return [Hash] Key-value of attributes and values.
     attr_accessor :attributes
 
     def initialize(attributes={})
       self.attributes = attributes.symbolize_keys
-      connect_associations!
+      associate!
     end
 
+    # Persist this object to the remote API.
+    #
     def save
-      self.class.save(id, attributes)
+      self.class.save(self.id, self.attributes)
     end
 
+    # Destroy this object with the might of 60 jotun!
+    #
     def destroy
-      self.class.destroy(id)
+      self.class.destroy(self.id)
     end
 
+    # Re-fetch the resource from the remote API.
+    #
+    def reload
+      self.attributes = get(URL(uri, self.id)).attributes
+      self
+    end
+
+    # Assumes that if the object doesn't have an `id`, it's new. If you
+    # instantiate an object with an `id`... what the crap man?!
+    #
     def new_record?
       self.attributes.include?(:id)
     end
@@ -228,15 +248,15 @@ module Remotely
     # to make Remotely::Model's compatible with Rails form helpers.
     #
     def to_key
-      @attributes.include?(:id) ? [@attributes[:id]] : nil
+      self.attributes.include?(:id) ? [self.attributes[:id]] : nil
     end
 
     def respond_to?(name)
-      @attributes.include?(name) or super
+      self.attributes.include?(name) or super
     end
 
     def to_json
-      Yajl::Encoder.encode(attributes)
+      Yajl::Encoder.encode(self.attributes)
     end
 
   private
@@ -245,29 +265,31 @@ module Remotely
       (class << self; self; end)
     end
 
-    def connect_associations!
-      @attributes.each { |key, id| association(key, id) if key =~ /_id$/ }
-    end
-
-    def association(key, id)
-      name = key.to_s.gsub("_id", "")
-      metaclass.send(:define_method, name) { fetch_association(name, id) }
-    end
-
-    def fetch_association(name, id)
-      unless instance_variable_defined?("@#{name}")
-        instance_variable_set("@#{name}", name.classify.constantize.find(id))
+    # Finds all attributes that match `*_id`, and creates a method for it,
+    # that will fetch that record. It uses the `*` part of the attribute
+    # to determine the model class and calls `find` on it with the value
+    # if the attribute.
+    #
+    def associate!
+      self.attributes.select { |k,v| k =~ /_id$/ }.each do |key, id|
+        name = key.to_s.gsub("_id", "")
+        metaclass.send(:define_method, name) { |reload=false| fetch(name, id, reload) }
       end
-      instance_variable_get("@#{name}")
+    end
+
+    def fetch(name, id, reload)
+      klass = name.to_s.classify.constantize
+      set_association(name, klass.find(id)) if reload || association_undefined?(name)
+      get_association(name)
     end
 
     def method_missing(name, *args, &block)
-      if @attributes.include?(name)
-        @attributes[name]
-      elsif name =~ /(.*)=$/ && @attributes.include?($1.to_sym)
-        @attributes[$1.to_sym] = args.first
-      elsif name =~ /(.*)\?$/ && @attributes.include?($1.to_sym)
-        !!@attributes[$1.to_sym]
+      if self.attributes.include?(name)
+        self.attributes[name]
+      elsif name =~ /(.*)=$/ && self.attributes.include?($1.to_sym)
+        self.attributes[$1.to_sym] = args.first
+      elsif name =~ /(.*)\?$/ && self.attributes.include?($1.to_sym)
+        !!self.attributes[$1.to_sym]
       else
         super
       end
