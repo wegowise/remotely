@@ -15,6 +15,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ['lib']
   gem.version       = Remotely::VERSION
 
+  gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec", "~> 2.6.0"
   gem.add_development_dependency "ZenTest"
   gem.add_development_dependency "autotest-growl"

@@ -2,16 +2,73 @@ require "ostruct"
 
 Remotely.app :adventure_app, "http://localhost:1234"
 
+class BaseTestClass < OpenStruct
+  extend  ActiveModel::Naming
+  include Remotely::Associations
+end
+
+# has_many
+
+class HasMany < BaseTestClass
+  has_many_remote :things
+end
+
+class HasManyWithPath < BaseTestClass
+  has_many_remote :things, :path => "/custom/things"
+end
+
+class HasManyWithPathVariables < BaseTestClass
+  has_many_remote :things, :path => "/custom/:name/things/"
+end
+
+class HasManyWithForeignKey < BaseTestClass
+  has_many_remote :things, :foreign_key => :fkey
+end
+
+# has_one
+
+class HasOne < BaseTestClass
+  has_one_remote :thing
+end
+
+class HasOneWithPath < BaseTestClass
+  has_one_remote :thing, :path => "/custom/thing"
+end
+
+class HasOneWithPathVariables < BaseTestClass
+  has_one_remote :thing, :path => "/custom/:name/thing"
+end
+
+class HasOneWithForeignKey < BaseTestClass
+  has_one_remote :thing, :foreign_key => :fkey
+end
+
+# belongs_to
+
+class BelongsTo < BaseTestClass
+  belongs_to_remote :thing
+end
+
+class BelongsToWithPath < BaseTestClass
+  belongs_to_remote :thing, :path => "/custom/thing"
+end
+
+class BelongsToWithPathVariables < BaseTestClass
+  belongs_to_remote :thing, :path => "/custom/:name/thing"
+end
+
+class BelongsToWithForeignKey < BaseTestClass
+  belongs_to_remote :thing, :foreign_key => :fkey
+end
+
+class Thing < Remotely::Model
+end
+
+
 class Adventure < Remotely::Model
   app :adventure_app
   uri "/adventures"
   has_many_remote :members
-end
-
-class CustomAdventure < OpenStruct
-  extend  ActiveModel::Naming
-  include Remotely::Associations
-  has_many_remote :members, :path => "/custom/members"
 end
 
 class Member < Remotely::Model

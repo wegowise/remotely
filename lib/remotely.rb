@@ -10,9 +10,12 @@ module Remotely
   autoload :Collection,   "remotely/collection"
   autoload :Associations, "remotely/associations"
   autoload :Model,        "remotely/model"
+  autoload :HTTP,         "remotely/http"
 
   class RemotelyError < StandardError
-    def message; MESSAGE; end
+    def message
+      self.class::MESSAGE
+    end
   end
 
   class URLHostError < RemotelyError
@@ -21,6 +24,10 @@ module Remotely
 
   class RemoteAppError < RemotelyError
     MESSAGE = "No app specified for association with more than one app registered."
+  end
+
+  class HasManyForeignKeyError < RemotelyError
+    MESSAGE = "has_many associations can use the :foreign_key option."
   end
 
   class << self

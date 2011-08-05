@@ -4,176 +4,8 @@ module Remotely
     extend Forwardable
     include Associations
 
-    module HTTP
-      # HTTP status codes that are represent successful requests
-      SUCCESS_STATUSES = (200..299)
-
-      # @return [Symbol] the name of the app the model is fetched from
-      attr_accessor :app
-
-      # @return [String] the relative uri to the model's type of resource
-      attr_accessor :uri
-
-      # Set or get the app for this model belongs to. If name is passed,
-      # it's a setter, otherwise, a getter.
-      #
-      # @overload app()
-      #   Gets the current `app` value.
-      #
-      # @overload app(name)
-      #   Sets the value of `app`.
-      #   @param [Symbol] name Name corresponding to an app defined via Remotely.app.
-      #
-      # @return [Symbol] New app symbol or current value.
-      #
-      def app(name=nil)
-        if name
-          @app = name
-        else
-          if Remotely.apps.size == 1
-            @app = Remotely.apps.first.first
-          else
-            raise RemoteAppError
-          end
-        end
-        @app
-      end
-
-      # Set or get the base uri for this model. If name is passed,
-      # it's a setter, otherwise, a getter.
-      #
-      # @overload uri()
-      #   Gets the current `uri` value.
-      #
-      # @overload uri(path)
-      #   Sets the value of `uri`.
-      #   @param [Symbol] path Relative path to this type of resource.
-      #
-      # @return [String] New uri or current value.
-      #
-      def uri(path=nil)
-        if path
-          @uri = path
-        else
-          if Remotely.apps.size == 1
-            @uri = Remotely.apps.first.last
-          else
-            raise RemoteAppError
-          end
-        end
-        @uri
-      end
-
-      # The connection to the remote API.
-      #
-      # @return [Faraday::Connection] Connection to the remote API.
-      #
-      def remotely_connection
-        address = Remotely.apps[app]
-        address = address + "http://" unless address =~ /^http/
-
-        @connection ||= Faraday::Connection.new(address) do |b|
-          b.request :url_encoded
-          b.request :json
-          b.adapter :net_http
-        end
-      end
-
-      # GET request.
-      #
-      # @param [String] uri Relative path of request.
-      # @param [Hash] params Query string, in key-value Hash form.
-      #
-      # @return [Remotely::Collection, Remotely::Model, Hash] If the result
-      #   is an array, Collection, if it's a hash, Model, otherwise it's the
-      #   parsed response body.
-      #
-      def get(uri, options={})
-        klass = options.delete(:class)
-        parse_response(remotely_connection.get { |req| req.url(uri, options) }, klass)
-      end
-
-      # POST request.
-      #
-      # Used mainly to create new resources. Remotely assumes that the
-      # remote API will return the newly created object, in JSON form,
-      # with the `id` assigned to it.
-      #
-      # @param [String] uri Relative path of request.
-      # @param [Hash] params Request payload. Gets JSON-encoded.
-      #
-      # @return [Remotely::Collection, Remotely::Model, Hash] If the result
-      #   is an array, Collection, if it's a hash, Model, otherwise it's the
-      #   parsed response body.
-      #
-      def post(uri, options={})
-        klass = options.delete(:class)
-        parse_response(remotely_connection.post(uri, Yajl::Encoder.encode(options)), klass)
-      end
-
-      # PUT request.
-      #
-      # @param [String] uri Relative path of request.
-      # @param [Hash] params Request payload. Gets JSON-encoded.
-      #
-      # @return [Boolean] Was the request successful? (Resulted in a
-      #   200-299 response code)
-      #
-      def put(uri, options={})
-        SUCCESS_STATUSES.include?(remotely_connection.put(uri, Yajl::Encoder.encode(options)).status)
-      end
-
-      # DELETE request.
-      #
-      # @param [String] uri Relative path of request.
-      #
-      # @return [Boolean] Was the resource deleted? (Resulted in a
-      #   200-299 response code)
-      #
-      def delete(uri)
-        SUCCESS_STATUSES.include?(remotely_connection.delete(uri).status)
-      end
-
-      # Parses the response depending on what was returned. The following
-      # table described what gets return in what situations.
-      #
-      # ------------+------------------+--------------
-      # Status Code | Return Body Type | Return Value
-      # ------------+------------------+--------------
-      #   >= 400    |       N/A        |    false
-      # ------------+------------------+--------------
-      #   200-299   |      Array       |  Collection
-      # ------------+------------------+--------------
-      #   200-299   |      Hash        |     Model
-      # ------------+------------------+--------------
-      #   200-299   |      Other       | Parsed JSON
-      # ------------+------------------+--------------
-      #
-      # @param [Faraday::Response] response Response object
-      #
-      # @return [Remotely::Collection, Remotely::Model, Other] If the result
-      #   is an array, Collection, if it's a hash, Model, otherwise it's the
-      #   parsed response body.
-      #
-      def parse_response(response, klass=nil)
-        return false if response.status >= 400
-
-        body  = Yajl::Parser.parse(response.body) rescue nil
-        klass = (klass || self)
-
-        case body
-        when Array
-          Collection.new(body.map { |o| klass.new(o) })
-        when Hash
-          klass.new(body)
-        else
-          body
-        end
-      end
-    end
-
     class << self
-      include HTTP
+      include Remotely::HTTP
 
       # Retreive a single object. Combines `uri` and `id` to determine
       # the URI to use.
@@ -226,11 +58,11 @@ module Remotely
       # @return [Boolean] If the destruction succeeded.
       #
       def destroy(id)
-        delete URL(uri, id)
+        http_delete URL(uri, id)
       end
     end
 
-    def_delegators :"self.class", :uri, :get
+    def_delegators :"self.class", :uri, :get, :post, :put
 
     # @return [Hash] Key-value of attributes and values.
     attr_accessor :attributes
@@ -249,7 +81,7 @@ module Remotely
     # Destroy this object with the might of 60 jotun!
     #
     def destroy
-      self.class.destroy(self.id)
+      self.class.http_delete(self.id)
     end
 
     # Re-fetch the resource from the remote API.
