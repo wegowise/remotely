@@ -22,6 +22,13 @@ module Remotely
         self.remote_associations[name] = options.merge(type: type)
         define_method(name) { |reload=false| call_association(reload, name) }
       end
+
+      def inherited(base)
+        base.remote_associations = self.remote_associations
+        base.extend(ClassMethods)
+        base.extend(Remotely::Model::HTTP)
+        super
+      end
     end
 
     def remote_associations
@@ -30,7 +37,7 @@ module Remotely
 
     def path_to(name, type)
       options = remote_associations[name]
-      base    = self.class.model_name.element.pluralize
+      base    = base_class.model_name.element.pluralize
       path    = options[:path] || name.to_s.pluralize
       fkey    = options[:foreign_key] || :"#{name}_id"
 
@@ -39,6 +46,16 @@ module Remotely
         interpolate URL(base, self.id, path)
       when :belongs_to
         interpolate URL(path, public_send(fkey))
+      end
+    end
+
+    def base_class
+      return self.class if self.class.superclass == ActiveRecord::Base
+
+      klass = self.class.superclass
+      while true
+        return klass if klass.superclass == ActiveRecord::Base
+        klass = klass.superclass
       end
     end
 
@@ -57,6 +74,7 @@ module Remotely
       type     = remote_associations[name][:type]
       klass    = name.to_s.classify.constantize
       response = self.class.get(path_to(name, type), :class => klass)
+      debugger
       response = response.first if type == :has_one
 
       set_association(name, response)

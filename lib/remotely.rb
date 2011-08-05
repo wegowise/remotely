@@ -19,6 +19,10 @@ module Remotely
     MESSAGE = "URL object missing host"
   end
 
+  class RemoteAppError < RemotelyError
+    MESSAGE = "No app specified for association with more than one app registered."
+  end
+
   class << self
     # @return [Hash] Hash of registered apps (key: name, value: URL)
     attr_accessor :apps
@@ -55,7 +59,5 @@ module Remotely
 end
 
 module ActiveRecord
-  class Base
-    include Remotely
-  end
+  class Base; include Remotely::Associations end
 end
