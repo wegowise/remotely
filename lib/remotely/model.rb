@@ -73,6 +73,18 @@ module Remotely
       associate!
     end
 
+    def update_attributes(attrs={})
+      pre_save_attributes = self.attributes.dup
+      self.attributes.merge!(attrs)
+
+      if save
+        true
+      else
+        self.attributes = pre_save_attributes
+        false
+      end
+    end
+
     # Persist this object to the remote API.
     #
     def save

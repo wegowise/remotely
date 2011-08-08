@@ -79,6 +79,36 @@ describe Remotely::Model do
     end
   end
 
+  describe "#update_attributes" do
+    let(:updates)        { {type: "awesome"} }
+    let(:new_attributes) { subject.attributes.merge(updates) }
+
+    it "replaces existing attribute values" do
+      subject.update_attributes(updates)
+      subject.type.should == "awesome"
+    end
+
+    it "calls save" do
+      subject.update_attributes(updates)
+      a_request(:put, "#{app}/adventures/1").with(new_attributes).should have_been_made
+    end
+
+    it "returns true on success" do
+      subject.update_attributes(updates).should be_true
+    end
+
+    it "returns false on failure" do
+      stub_request(:put, %r[/adventures/1]).to_return(status: 500)
+      subject.update_attributes(updates).should be_false
+    end
+
+    it "reverts the object's attributes if the save fails" do
+      stub_request(:put, %r[/adventures/1]).to_return(status: 500)
+      subject.update_attributes(updates)
+      subject.type.should == "MATHEMATICAL!"
+    end
+  end
+
   describe "#destroy" do
     it "destroys a resource with the might of 60 jotun!!" do
       Adventure.new(attributes).destroy
