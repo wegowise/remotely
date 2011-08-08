@@ -106,7 +106,6 @@ module Remotely
     #  user = User.new(:family_key => "noble")
     #  user.family # => /families/noble
     #
-    #
     module ClassMethods
       # Remote associations defined and their options.
       attr_accessor :remote_associations
@@ -172,6 +171,7 @@ module Remotely
       path = opts[:path]
       path = self.instance_exec(&path) if path.is_a?(Proc)
 
+      # :path option takes precedence
       return interpolate URL(path) if path
 
       singular_path = name.to_s.singularize
@@ -189,13 +189,12 @@ module Remotely
 
     def base_class
       klass = self.class
-
-      until true
-        break if [ActiveRecord::Base, Remotely::Model].include?(klass.superclass)
-        klass = klass.superclass
-      end
-
+      klass = klass.superclass until klass.nil? || is_base_class?(klass)
       klass || self.class
+    end
+
+    def is_base_class?(klass)
+      [ActiveRecord::Base, Remotely::Model].include?(klass.superclass)
     end
 
     def self.included(base) #:nodoc:
@@ -228,8 +227,8 @@ module Remotely
       !instance_variable_defined?("@#{name}")
     end
 
-    def interpolate(string)
-      string.to_s.gsub(%r{:\w+}) { |match| public_send(match.tr(":", "")) }
+    def interpolate(content)
+      content.to_s.gsub(/:\w+/) { |m| public_send(m.tr(":", "")) }
     end
   end
 end

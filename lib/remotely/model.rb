@@ -1,4 +1,5 @@
 module Remotely
+
   class Model
     extend ActiveModel::Naming
     extend Forwardable
@@ -81,7 +82,7 @@ module Remotely
     # Destroy this object with the might of 60 jotun!
     #
     def destroy
-      self.class.http_delete(self.id)
+      self.class.destroy(self.id)
     end
 
     # Re-fetch the resource from the remote API.
