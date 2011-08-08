@@ -10,12 +10,10 @@ module Remotely
   autoload :Collection,   "remotely/collection"
   autoload :Associations, "remotely/associations"
   autoload :Model,        "remotely/model"
-  autoload :HTTP,         "remotely/http"
+  autoload :HTTPMethods,  "remotely/http_methods"
 
   class RemotelyError < StandardError
-    def message
-      self.class::MESSAGE
-    end
+    def message; self.class::MESSAGE; end
   end
 
   class URLHostError < RemotelyError

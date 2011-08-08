@@ -153,7 +153,7 @@ module Remotely
       def inherited(base)
         base.remote_associations = self.remote_associations
         base.extend(ClassMethods)
-        base.extend(Remotely::HTTP)
+        base.extend(Remotely::HTTPMethods)
         super
       end
     end
@@ -211,7 +211,7 @@ module Remotely
     def fetch_association(name)
       type     = remote_associations[name][:type]
       klass    = name.to_s.classify.constantize
-      response = self.class.get(path_to(name, type), :class => klass)
+      response = self.class.get(path_to(name, type), :class => klass, :parent => self)
       set_association(name, response)
     end
 

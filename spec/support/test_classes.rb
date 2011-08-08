@@ -5,6 +5,7 @@ Remotely.app :adventure_app, "http://localhost:1234"
 class BaseTestClass < OpenStruct
   extend  ActiveModel::Naming
   include Remotely::Associations
+  def self.base_class; self; end
 end
 
 # has_many
@@ -61,9 +62,10 @@ class BelongsToWithForeignKey < BaseTestClass
   belongs_to_remote :thing, :foreign_key => :fkey
 end
 
+# Generic
+
 class Thing < Remotely::Model
 end
-
 
 class Adventure < Remotely::Model
   app :adventure_app

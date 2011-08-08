@@ -56,10 +56,68 @@ describe Remotely::Model do
     end
   end
 
+  describe ".find_or_" do
+    let(:body)         { Yajl::Encoder.encode([{id: 1, name: "BubbleGum"}]) }
+    let(:stub_success) { stub_request(:get, "#{app}/adventures/search?name=BubbleGum").to_return(body: body) }
+    let(:stub_failure) { stub_request(:get, "#{app}/adventures/search?name=BubbleGum").to_return(body: "[]") }
+
+    describe "initialize" do
+      it "tries to fetch the record" do
+        stub_success
+        Adventure.find_or_initialize(name: "BubbleGum")
+        a_request(:get, "#{app}/adventures/search?name=BubbleGum").should have_been_made
+      end
+
+      it "returns the fetched object if found" do
+        stub_success
+        Adventure.find_or_initialize(name: "BubbleGum").id.should == 1
+      end
+
+      it "creates a new object if one is not found" do
+        stub_failure
+        Adventure.find_or_initialize(name: "BubbleGum").should be_a_new_record
+      end
+    end
+
+    describe "create" do
+      it "automatically saves the new object" do
+        stub_failure
+        Adventure.should_receive(:create).with(name: "BubbleGum")
+        Adventure.find_or_create(name: "BubbleGum")
+      end
+    end
+  end
+
   describe ".save" do
     it "saves a resource using id and attributes" do
       Adventure.save(1, name: "Fun")
       a_request(:put, "#{app}/adventures/1").with(attributes).should have_been_made
+    end
+  end
+
+  describe ".find_by_*" do
+    it "searches by a single attribute" do
+      Adventure.find_by_name("Fun")
+      a_request(:get, "#{app}/adventures/search?name=Fun").should have_been_made
+    end
+
+    it "searches by multiple attributes seperated by 'and'" do
+      Adventure.find_by_name_and_type("Fun", "MATHEMATICAL!")
+      a_request(:get, "#{app}/adventures/search?name=Fun&type=MATHEMATICAL!").should have_been_made
+    end
+  end
+
+  describe ".all" do
+    it "fetches all resources" do
+      Adventure.all
+      a_request(:get, "#{app}/adventures").should have_been_made
+    end
+  end
+
+  describe ".update_all" do
+    it "request an update to all entries" do
+      Adventure.update_all(type: "awesome")
+      a_request(:put, "#{app}/adventures").with(type: "awesome").should have_been_made
     end
   end
 
@@ -76,6 +134,13 @@ describe Remotely::Model do
 
     it "returns true when the save succeeds" do
       Adventure.new(attributes).save.should == true
+    end
+  end
+
+  describe "#update_attribute" do
+    it "updates a single attribute and saves" do
+      subject.update_attribute(:type, "powerful")
+      a_request(:put, "#{app}/adventures/1").with(type: "powerful").should have_been_made
     end
   end
 

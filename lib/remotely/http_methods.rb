@@ -1,5 +1,5 @@
 module Remotely
-  module HTTP
+  module HTTPMethods
     # HTTP status codes that are represent successful requests
     SUCCESS_STATUSES = (200..299)
 
@@ -69,8 +69,9 @@ module Remotely
     #   parsed response body.
     #
     def get(uri, options={})
-      klass = options.delete(:class)
-      parse_response(remotely_connection.get { |req| req.url(uri, options) }, klass)
+      klass  = options.delete(:class)
+      parent = options.delete(:parent)
+      parse_response(remotely_connection.get { |req| req.url(uri, options) }, klass, parent)
     end
 
     # POST request.
@@ -87,8 +88,9 @@ module Remotely
     #   parsed response body.
     #
     def post(uri, options={})
-      klass = options.delete(:class)
-      parse_response(remotely_connection.post(uri, Yajl::Encoder.encode(options)), klass)
+      klass  = options.delete(:class)
+      parent = options.delete(:parent)
+      parse_response(remotely_connection.post(uri, Yajl::Encoder.encode(options)), klass, parent)
     end
 
     # PUT request.
@@ -135,7 +137,7 @@ module Remotely
     #   is an array, Collection, if it's a hash, Model, otherwise it's the
     #   parsed response body.
     #
-    def parse_response(response, klass=nil)
+    def parse_response(response, klass=nil, parent=nil)
       return false if response.status >= 400
 
       body  = Yajl::Parser.parse(response.body) rescue nil
@@ -143,7 +145,7 @@ module Remotely
 
       case body
       when Array
-        Collection.new(body.map { |o| klass.new(o) })
+        Collection.new(parent, klass, body.map { |o| klass.new(o) })
       when Hash
         klass.new(body)
       else
