@@ -158,9 +158,9 @@ module Remotely
     # @return [Boolean, Mixed] Boolean if the it tried to save, the
     #   new value otherwise.
     #
-    def update_attribute(name, value, should_save=true)
+    def update_attribute(name, value)
       self.attributes[name.to_sym] = value
-      save if should_save
+      save
     end
 
     # Update multiple attributes.
@@ -170,7 +170,7 @@ module Remotely
     #
     def update_attributes(attrs={})
       @attribute_cache = self.attributes.dup
-      attrs.each { |key, value| update_attribute(key, value, false) }
+      self.attributes.merge!(attrs.symbolize_keys)
 
       if save
         true
