@@ -30,7 +30,9 @@ module Remotely
 
   class << self
     # @return [Hash] Hash of registered apps (key: name, value: URL)
-    attr_accessor :apps
+    def apps
+      @apps ||= {}
+    end
 
     # Configure applications to be used by models. Accepts a block
     # which specifies multiple apps via the `app` method.
@@ -43,7 +45,7 @@ module Remotely
     #   end
     #
     def configure(&block)
-      self.instance_eval(&block)
+      instance_eval(&block)
     end
 
     # Register an application with Remotely.
@@ -52,7 +54,7 @@ module Remotely
     # @param [String] url URL to the application's API.
     #
     def app(name, url)
-      (@apps ||= {})[name] = url
+      apps[name] = url
     end
 
     # Clear all registered apps
