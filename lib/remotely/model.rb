@@ -113,6 +113,13 @@ module Remotely
       end
       alias :destroy! :destroy
 
+      # Remotely models don't support single table inheritence
+      # so the base class is always itself.
+      #
+      def base_class
+        self
+      end
+
     private
 
       # Search by one or more attribute and their values.

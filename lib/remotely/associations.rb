@@ -166,7 +166,7 @@ module Remotely
       opts = remote_associations[name]
       raise HasManyForeignKeyError if opts[:foreign_key] && [:has_many, :has_one].include?(type)
 
-      base = base_class.model_name.element.pluralize
+      base = self.class.base_class.model_name.element.pluralize
       fkey = opts[:foreign_key] || :"#{name}_id"
       path = opts[:path]
       path = self.instance_exec(&path) if path.is_a?(Proc)
@@ -185,16 +185,6 @@ module Remotely
       when :belongs_to
         interpolate URL(plural_path, public_send(fkey))
       end
-    end
-
-    def base_class
-      klass = self.class
-      klass = klass.superclass until klass.nil? || is_base_class?(klass)
-      klass || self.class
-    end
-
-    def is_base_class?(klass)
-      [ActiveRecord::Base, Remotely::Model].include?(klass.superclass)
     end
 
     def self.included(base) #:nodoc:
