@@ -1,0 +1,27 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    activemodel (3.0.10)
+      activesupport (= 3.0.10)
+      builder (~> 2.1.2)
+      i18n (~> 0.5.0)
+    activesupport (3.0.10)
+    addressable (2.2.6)
+    builder (2.1.2)
+    faraday (0.7.4)
+      addressable (~> 2.2.6)
+      multipart-post (~> 1.1.0)
+      rack (>= 1.1.0, < 2)
+    i18n (0.5.0)
+    multipart-post (1.1.3)
+    rack (1.3.2)
+    yajl-ruby (0.8.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  activemodel
+  activesupport
+  faraday (~> 0.7.4)
+  yajl-ruby (~> 0.8.2)
