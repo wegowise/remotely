@@ -78,6 +78,7 @@ module Remotely
       def create(params={})
         post uri, params
       end
+
       alias :create! :create
 
       # Save a record.
@@ -91,6 +92,7 @@ module Remotely
         return create(params) if id.nil?
         put URL(uri, id), params
       end
+
       alias :save! :save
 
       # Update every entry with values from +params+.
@@ -102,6 +104,8 @@ module Remotely
         put uri, params
       end
 
+      alias :update_all! :update_all
+
       # Destroy an individual resource.
       #
       # @param [Fixnum] id id of the resource to destroy.
@@ -111,6 +115,7 @@ module Remotely
       def destroy(id)
         http_delete URL(uri, id)
       end
+
       alias :destroy! :destroy
 
       # Remotely models don't support single table inheritence
@@ -203,11 +208,10 @@ module Remotely
       self.attributes[:id]
     end
 
-    # Assumes that if the object doesn't have an `id`, it's new. If you
-    # instantiate an object with an `id`... why?
+    # Assumes that if the object doesn't have an `id`, it's new.
     #
     def new_record?
-      !self.attributes[:id]
+      self.attributes[:id].nil?
     end
 
     # Mimics ActiveRecord::AttributeMethods::PrimaryKey in order
