@@ -222,7 +222,7 @@ module Remotely
     end
 
     def respond_to?(name)
-      self.attributes.include?(name) or super
+      self.attributes and self.attributes.include?(name) or super
     end
 
     def to_json
