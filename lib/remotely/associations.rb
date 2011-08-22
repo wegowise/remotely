@@ -147,7 +147,8 @@ module Remotely
       def define_association_method(type, name, options)
         self.remote_associations     ||= {}
         self.remote_associations[name] = options.merge(type: type)
-        define_method(name) { |reload=false| call_association(reload, name) }
+        define_method(name)        { |reload=false| call_association(reload, name) }
+        define_method(:"#{name}=") { |o| set_association(name, o) }
       end
 
       def inherited(base)

@@ -11,6 +11,11 @@ describe Remotely::Associations do
     it "creates a method for the association" do
       subject.should respond_to(assoc)
     end
+
+    it "creates a setter for the associations" do
+      subject.public_send(:"#{assoc}=", "guy")
+      subject.public_send(assoc).should == "guy"
+    end
   end
 
   shared_examples_for "an association with a path" do
