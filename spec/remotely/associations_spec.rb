@@ -114,6 +114,12 @@ describe Remotely::Associations do
       subject.thing.should be_a Thing
     end
 
+    it "should not fetch an association when the foreign key is nil" do
+      subject.thing_id = nil
+      subject.thing.should be_nil
+      a_request(:get, %r(/things)).should_not have_been_made
+    end
+
     context "with no options" do
       subject    { BelongsTo.new(thing_id: 1) }
       let(:path) { "/things/1" }

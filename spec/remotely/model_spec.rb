@@ -85,6 +85,11 @@ describe Remotely::Model do
         Adventure.should_receive(:create).with(name: "BubbleGum")
         Adventure.find_or_create(name: "BubbleGum")
       end
+
+      it "returns the first item from the collection" do
+        stub_success
+        Adventure.find_or_create(name: "BubbleGum").should be_an Adventure
+      end
     end
   end
 
