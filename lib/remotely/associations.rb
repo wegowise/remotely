@@ -194,19 +194,23 @@ module Remotely
 
   private
   
-    def can_fetch_belongs_to?(name)
+    def can_fetch?(name)
       opts = remote_associations[name]
-      return true unless opts[:type] == :belongs_to
 
       if opts[:path]
         opts[:path].scan(/:([^\/]*)/).map { |m| public_send(m.first.to_sym) }.all?
       else
-        !public_send(opts[:foreign_key] || "#{name}_id").nil?
+        case opts[:type]
+        when :belongs_to
+          !public_send(opts[:foreign_key] || "#{name}_id").nil?
+        when :has_many, :has_one
+          !self.id.nil?
+        end
       end
     end
 
     def call_association(reload, name)
-      return unless can_fetch_belongs_to?(name)
+      return unless can_fetch?(name)
       fetch_association(name) if reload || association_undefined?(name)
       get_association(name)
     end

@@ -44,6 +44,11 @@ describe Remotely::Associations do
       subject.things.first.should be_a Thing
     end
 
+    it "returns nil when it can not fetch the association" do
+      subject.id = nil
+      subject.things.should be_nil
+    end
+
     context "with no options" do
       subject    { HasMany.new(id: 1) }
       let(:path) { "/has_manies/1/things" }
