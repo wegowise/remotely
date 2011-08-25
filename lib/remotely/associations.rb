@@ -194,7 +194,7 @@ module Remotely
 
   private
   
-    def can_fetch?(name)
+    def can_fetch_remotely_association?(name)
       opts = remote_associations[name]
 
       if opts[:path]
@@ -210,7 +210,7 @@ module Remotely
     end
 
     def call_association(reload, name)
-      return unless can_fetch?(name)
+      return unless can_fetch_remotely_association?(name)
       fetch_association(name) if reload || association_undefined?(name)
       get_association(name)
     end
