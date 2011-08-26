@@ -221,9 +221,12 @@ module Remotely
       self.attributes.include?(:id) ? [self.attributes[:id]] : nil
     end
 
-    # for Rails path helpers
+    # Makes Rails route paths work properly
+    #
+    # @return [String, NilClass] String of `id` if it exists, nil otherwise.
+    #
     def to_param
-      self.id.to_s
+      self.attributes.include?(:id) ? self.attributes[:id].to_s : nil
     end
 
     def respond_to?(name)
