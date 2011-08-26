@@ -149,6 +149,12 @@ describe Remotely::Model do
     end
   end
 
+  describe "#to_param" do
+    it "returns correct value" do
+      subject.to_param.should == '1'
+    end
+  end
+
   describe "#update_attributes" do
     let(:updates)        { {type: "awesome"} }
     let(:new_attributes) { subject.attributes.merge(updates) }

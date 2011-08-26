@@ -221,6 +221,11 @@ module Remotely
       self.attributes.include?(:id) ? [self.attributes[:id]] : nil
     end
 
+    # for Rails path helpers
+    def to_param
+      self.id.to_s
+    end
+
     def respond_to?(name)
       self.attributes and self.attributes.include?(name) or super
     end
@@ -228,7 +233,6 @@ module Remotely
     def to_json
       Yajl::Encoder.encode(self.attributes)
     end
-
   private
 
     def metaclass
