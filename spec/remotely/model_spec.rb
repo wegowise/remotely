@@ -263,4 +263,18 @@ describe Remotely::Model do
   it "creates boolean methods for each attribute" do
     subject.name?.should == true
   end
+
+  it "returns id from #to_key" do
+    subject.id = 1
+    subject.to_key.should == [1]
+  end
+
+  it "returns id from #to_param" do
+    subject.id = 1
+    subject.to_param.should == "1"
+  end
+
+  it "returns itself from #to_model" do
+    subject.to_model.should == subject
+  end
 end

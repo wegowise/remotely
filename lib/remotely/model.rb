@@ -1,7 +1,8 @@
 module Remotely
   class Model
-    extend ActiveModel::Naming
-    extend Forwardable
+    extend  Forwardable
+    extend  ActiveModel::Naming
+    include ActiveModel::Conversion
     include Associations
 
     class << self
@@ -214,19 +215,8 @@ module Remotely
       self.attributes[:id].nil?
     end
 
-    # Mimics ActiveRecord::AttributeMethods::PrimaryKey in order
-    # to make Remotely::Model's compatible with Rails form helpers.
-    #
-    def to_key
-      self.attributes.include?(:id) ? [self.attributes[:id]] : nil
-    end
-
-    # Makes Rails route paths work properly
-    #
-    # @return [String, NilClass] String of `id` if it exists, nil otherwise.
-    #
-    def to_param
-      self.attributes.include?(:id) ? self.attributes[:id].to_s : nil
+    def persisted?
+      !new_record?
     end
 
     def respond_to?(name)
@@ -236,6 +226,7 @@ module Remotely
     def to_json
       Yajl::Encoder.encode(self.attributes)
     end
+
   private
 
     def metaclass
