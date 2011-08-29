@@ -122,7 +122,8 @@ module Remotely
 
     # Gets called before a request. Override to add logging, etc.
     def before_request(uri, http_verb = :get, options = {})
-      puts "-> #{http_verb.to_s.upcase} #{uri}" if ENV['REMOTELY_DEBUG']
+      puts "-> #{http_verb.to_s.upcase} #{uri}" if ENV['REMOTELY_DEBUG'] &&
+        !caller.find {|e| e.include?(Dir.pwd) }.to_s[%r{#{Dir.pwd + '/features/step_definitions'}}]
     end
 
     # Parses the response depending on what was returned. The following
