@@ -71,6 +71,7 @@ module Remotely
     def get(uri, options={})
       klass  = options.delete(:class)
       parent = options.delete(:parent)
+      before_request(uri, :get, options)
       parse_response(remotely_connection.get { |req| req.url(uri, options) }, klass, parent)
     end
 
@@ -90,6 +91,7 @@ module Remotely
     def post(uri, options={})
       klass  = options.delete(:class)
       parent = options.delete(:parent)
+      before_request(uri, :post, options)
       parse_response(remotely_connection.post(uri, Yajl::Encoder.encode(options)), klass, parent)
     end
 
@@ -102,6 +104,7 @@ module Remotely
     #   200-299 response code)
     #
     def put(uri, options={})
+      before_request(uri, :put)
       SUCCESS_STATUSES.include?(remotely_connection.put(uri, Yajl::Encoder.encode(options)).status)
     end
 
@@ -113,7 +116,13 @@ module Remotely
     #   200-299 response code)
     #
     def http_delete(uri)
+      before_request(uri, :delete)
       SUCCESS_STATUSES.include?(remotely_connection.delete(uri).status)
+    end
+
+    # Gets called before a request. Override to add logging, etc.
+    def before_request(uri, http_verb = :get, options = {})
+      puts "-> #{http_verb.to_s.upcase} #{uri}" if ENV['REMOTELY_DEBUG']
     end
 
     # Parses the response depending on what was returned. The following
