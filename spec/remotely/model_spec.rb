@@ -93,13 +93,6 @@ describe Remotely::Model do
     end
   end
 
-  describe ".save" do
-    it "saves a resource using id and attributes" do
-      Adventure.save(1, name: "Fun")
-      a_request(:put, "#{app}/adventures/1").with(attributes).should have_been_made
-    end
-  end
-
   describe ".find_by_*" do
     it "searches by a single attribute" do
       Adventure.find_by_name("Fun")
@@ -139,6 +132,14 @@ describe Remotely::Model do
 
     it "returns true when the save succeeds" do
       Adventure.new(attributes).save.should == true
+    end
+
+    it "returns false when the save fails" do
+      adventure = Adventure.new(attributes)
+      adventure.name = new_name
+      stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
+      adventure.save.should == false
+      adventure.errors[:base].should == %w{this failed}
     end
   end
 
@@ -276,5 +277,13 @@ describe Remotely::Model do
 
   it "returns itself from #to_model" do
     subject.to_model.should == subject
+  end
+
+  context "with errors" do
+    let(:attributes) { {'errors' => {:base => %w{totally failed dude}}} }
+
+    it "adds errors during #initialize" do
+      subject.errors[:base].should == %w{totally failed dude}
+    end
   end
 end

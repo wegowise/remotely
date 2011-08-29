@@ -82,20 +82,6 @@ module Remotely
 
       alias :create! :create
 
-      # Save a record.
-      #
-      # @param [Fixnum, nil] id id of the record to save
-      # @param [Hash] params Attributes of the record to save
-      #
-      # @return [Boolean] Did the save succeed?
-      #
-      def save(id=nil, params={})
-        return create(params) if id.nil?
-        put URL(uri, id), params
-      end
-
-      alias :save! :save
-
       # Update every entry with values from +params+.
       #
       # @param [Hash] params Key-Value pairs of attributes to update
@@ -151,6 +137,7 @@ module Remotely
     attr_accessor :attributes
 
     def initialize(attributes={})
+      set_errors(attributes.delete('errors')) if attributes['errors']
       self.attributes = attributes.symbolize_keys
       associate!
     end
@@ -189,7 +176,24 @@ module Remotely
     # Persist this object to the remote API.
     #
     def save
-      self.class.save(id, self.attributes)
+      return self.class.create(attributes) if new_record?
+      response = put URL(uri, id), attributes
+      if response.status != 200
+        set_errors (Yajl::Parser.parse(response.body) || {})['errors']
+      end
+      response.status == 200
+    end
+
+    # Sets multiple errors with a hash
+    def set_errors(hash)
+      (hash || {}).each do |attribute, messages|
+        Array(messages).each {|m| errors.add(attribute, m) }
+      end
+    end
+
+    # Track errors with ActiveModel::Errors
+    def errors
+      @errors ||= ActiveModel::Errors.new(self)
     end
 
     # Destroy this object with the might of 60 jotun!

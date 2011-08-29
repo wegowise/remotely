@@ -105,7 +105,7 @@ module Remotely
     #
     def put(uri, options={})
       before_request(uri, :put)
-      SUCCESS_STATUSES.include?(remotely_connection.put(uri, Yajl::Encoder.encode(options)).status)
+      remotely_connection.put(uri, Yajl::Encoder.encode(options))
     end
 
     # DELETE request.
