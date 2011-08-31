@@ -122,7 +122,7 @@ module Remotely
       # @see .where
       #
       def find_by(name, *args)
-        where(Hash[name.split("_and_").zip(args)])
+        where(Hash[name.split("_and_").zip(args)]).first
       end
 
       def method_missing(name, *args, &block)
