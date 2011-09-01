@@ -91,8 +91,10 @@ module Remotely
     def post(uri, options={})
       klass  = options.delete(:class)
       parent = options.delete(:parent)
-      before_request(uri, :post, options)
-      parse_response(remotely_connection.post(uri, Yajl::Encoder.encode(options)), klass, parent)
+      body   = options.delete(:body) || Yajl::Encoder.encode(options)
+
+      before_request(uri, :post, body)
+      parse_response(remotely_connection.post(uri, body), klass, parent)
     end
 
     # PUT request.
@@ -104,8 +106,10 @@ module Remotely
     #   200-299 response code)
     #
     def put(uri, options={})
+      body = options.delete(:body) || Yajl::Encoder.encode(options)
+
       before_request(uri, :put)
-      remotely_connection.put(uri, Yajl::Encoder.encode(options))
+      remotely_connection.put(uri, body)
     end
 
     # DELETE request.
