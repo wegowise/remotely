@@ -6,6 +6,23 @@ describe Remotely::Model do
 
   subject { Adventure.new(attributes) }
 
+  describe ".attr_savable" do
+    let(:attrs) { {id: 2, name: "Wishes!", type: "MATHEMATICAL!", length: 9} }
+    let(:saved) { Yajl::Encoder.encode({name: "OMG New Name!", type: "MATHEMATICAL!", id: 2})
+    }
+
+    subject { Adventure.new(attrs) }
+
+    it "stores which attributes are savable" do
+      Adventure.savable_attributes.should == [:name, :type]
+    end
+
+    it "only sends the specified attributes when saving an existing record" do
+      subject.update_attribute(:name, "OMG New Name!")
+      a_request(:put, "#{app}/adventures/2").with(body: saved).should have_been_made
+    end
+  end
+
   describe ".find" do
     it "retreives an individual resource" do
       Adventure.find(1)

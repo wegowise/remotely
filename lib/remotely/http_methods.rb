@@ -51,11 +51,11 @@ module Remotely
     #
     def remotely_connection
       address = Remotely.apps[app]
-      address = address + "http://" unless address =~ /^http/
+      address = "http://#{address}" unless address =~ /^http/
 
       @connection ||= Faraday::Connection.new(address) do |b|
-        b.request :url_encoded
-        b.adapter :net_http
+        b.request  :url_encoded
+        b.adapter  :net_http
       end
     end
 
@@ -108,7 +108,7 @@ module Remotely
     def put(uri, options={})
       body = options.delete(:body) || Yajl::Encoder.encode(options)
 
-      before_request(uri, :put)
+      before_request(uri, :put, body)
       remotely_connection.put(uri, body)
     end
 
@@ -126,8 +126,10 @@ module Remotely
 
     # Gets called before a request. Override to add logging, etc.
     def before_request(uri, http_verb = :get, options = {})
-      puts "-> #{http_verb.to_s.upcase} #{uri}" if ENV['REMOTELY_DEBUG'] &&
-        !caller.find {|e| e.include?(Dir.pwd) }.to_s[%r{#{Dir.pwd + '/features/step_definitions'}}]
+      if ENV['REMOTELY_DEBUG']
+        puts "-> #{http_verb.to_s.upcase} #{uri}" 
+        puts "   #{options.inspect}"
+      end
     end
 
     # Parses the response depending on what was returned. The following

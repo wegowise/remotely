@@ -71,6 +71,7 @@ class Adventure < Remotely::Model
   app :adventure_app
   uri "/adventures"
   has_many_remote :members
+  attr_savable :name, :type
 end
 
 class Member < Remotely::Model

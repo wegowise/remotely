@@ -8,6 +8,23 @@ module Remotely
     class << self
       include Remotely::HTTPMethods
 
+      # Array of attributes to be sent when saving
+      attr_reader :savable_attributes
+
+      # Mark an attribute as safe to save. The `save` method
+      # will only send these attributes when called.
+      #
+      # @param [Symbols] *attrs List of attributes to make savable.
+      #
+      # @example Mark `name` and `age` as savable
+      #   attr_savable :name, :age
+      #
+      def attr_savable(*attrs)
+        @savable_attributes ||= []
+        @savable_attributes += attrs
+        @savable_attributes.uniq!
+      end
+
       # Fetch all entries.
       #
       # @return [Remotely::Collection] collection of entries
@@ -177,11 +194,16 @@ module Remotely
     #
     def save
       return self.class.create(attributes) if new_record?
-      response = put URL(uri, id), attributes
+
+      response = put URL(uri, id), attributes.slice(*savable_attributes)
       if response.status != 200
         set_errors (Yajl::Parser.parse(response.body) || {})['errors']
       end
       response.status == 200
+    end
+
+    def savable_attributes
+      (self.class.savable_attributes || attributes.keys) << :id
     end
 
     # Sets multiple errors with a hash
