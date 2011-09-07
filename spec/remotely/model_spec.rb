@@ -61,7 +61,7 @@ describe Remotely::Model do
     let(:attrs) { attributes.except(:id) }
 
     before do
-      stub_request(:post, "#{app}/adventures").to_return(lambda { |req| { body: req.body }})
+      stub_request(:post, "#{app}/adventures").to_return(lambda { |req| { body: req.body, status: 201 }})
     end
 
     it "creates the resource" do
@@ -155,7 +155,7 @@ describe Remotely::Model do
       end
 
       it "returns true when the save succeeds" do
-        Adventure.new(attributes).save.should == true
+        Adventure.new(attributes).save.should be_a Adventure
       end
 
       it "returns false when the save fails" do
@@ -175,7 +175,7 @@ describe Remotely::Model do
     context "when creating" do
       it "merges in the response body to attributes on success" do
         adventure = Adventure.new(name: "To Be Saved...")
-        stub_request(:post, %r(/adventures)).to_return(body: to_json(attributes.merge(name: "To Be Saved...", id: 2)))
+        stub_request(:post, %r(/adventures)).to_return(body: to_json(attributes.merge(name: "To Be Saved...", id: 2)), status: 201)
         adventure.save
         adventure.id.should == 2
       end

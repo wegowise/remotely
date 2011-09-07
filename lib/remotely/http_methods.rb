@@ -94,7 +94,7 @@ module Remotely
       body   = options.delete(:body) || Yajl::Encoder.encode(options)
 
       before_request(uri, :post, body)
-      parse_response(remotely_connection.post(uri, body), klass, parent)
+      remotely_connection.post(uri, body)
     end
 
     # PUT request.
