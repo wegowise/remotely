@@ -8,8 +8,7 @@ describe Remotely::Model do
 
   describe ".attr_savable" do
     let(:attrs) { {id: 2, name: "Wishes!", type: "MATHEMATICAL!", length: 9} }
-    let(:saved) { Yajl::Encoder.encode({name: "OMG New Name!", type: "MATHEMATICAL!", id: 2})
-    }
+    let(:saved) { to_json({name: "OMG New Name!", type: "MATHEMATICAL!", id: 2}) }
 
     subject { Adventure.new(attrs) }
 
@@ -18,6 +17,7 @@ describe Remotely::Model do
     end
 
     it "only sends the specified attributes when saving an existing record" do
+      stub_request(:put, "#{app}/adventures/2").to_return(body: saved)
       subject.update_attribute(:name, "OMG New Name!")
       a_request(:put, "#{app}/adventures/2").with(body: saved).should have_been_made
     end
@@ -58,18 +58,24 @@ describe Remotely::Model do
   end
 
   describe ".create" do
+    let(:attrs) { attributes.except(:id) }
+
+    before do
+      stub_request(:post, "#{app}/adventures").to_return(lambda { |req| { body: req.body }})
+    end
+
     it "creates the resource" do
-      Adventure.create(attributes)
-      a_request(:post, "#{app}/adventures").with(attributes).should have_been_made
+      Adventure.create(attrs)
+      a_request(:post, "#{app}/adventures").with(attrs).should have_been_made
     end
 
     it "returns the new resource on creation" do
-      Adventure.create(attributes).name.should == "Marceline Quest"
+      Adventure.create(attrs).name.should == "Marceline Quest"
     end
 
     it "returns false when the creation fails" do
       stub_request(:post, %r[/adventures]).to_return(status: 500)
-      Adventure.create(attributes).should be_false
+      Adventure.create(attrs).should be_false
     end
   end
 
@@ -140,23 +146,44 @@ describe Remotely::Model do
     let(:new_name)       { "City of Thieves" }
     let(:new_attributes) { attributes.merge(name: new_name) }
 
-    it "updates the resource" do
-      adventure = Adventure.new(attributes)
-      adventure.name = new_name
-      adventure.save
-      a_request(:put, "#{app}/adventures/1").with(new_attributes).should have_been_made
+    context "when updating" do
+      it "updates the resource" do
+        adventure = Adventure.new(attributes)
+        adventure.name = new_name
+        adventure.save
+        a_request(:put, "#{app}/adventures/1").with(new_attributes).should have_been_made
+      end
+
+      it "returns true when the save succeeds" do
+        Adventure.new(attributes).save.should == true
+      end
+
+      it "returns false when the save fails" do
+        adventure = Adventure.new(attributes)
+        stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
+        adventure.save.should == false
+      end
+
+      it "sets errors when a save fails" do
+        adventure = Adventure.new(attributes)
+        stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
+        adventure.save
+        adventure.errors[:base].should == %w{this failed}
+      end
     end
 
-    it "returns true when the save succeeds" do
-      Adventure.new(attributes).save.should == true
-    end
+    context "when creating" do
+      it "merges in the response body to attributes on success" do
+        adventure = Adventure.new(name: "To Be Saved...")
+        stub_request(:post, %r(/adventures)).to_return(body: to_json(attributes.merge(name: "To Be Saved...", id: 2)))
+        adventure.save
+        adventure.id.should == 2
+      end
 
-    it "returns false when the save fails" do
-      adventure = Adventure.new(attributes)
-      adventure.name = new_name
-      stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
-      adventure.save.should == false
-      adventure.errors[:base].should == %w{this failed}
+      it "returns false on failure" do
+        stub_request(:post, %r(/adventures)).to_return(status: 409)
+        Adventure.new(name: "name").save.should == false
+      end
     end
   end
 

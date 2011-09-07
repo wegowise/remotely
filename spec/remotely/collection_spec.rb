@@ -41,6 +41,10 @@ describe Remotely::Collection do
   end
 
   describe "#create" do
+    before do
+      stub_request(:post, %r(/members)).to_return(lambda { |req| {body: req.body} })
+    end
+
     it "creates and saves a new model object with the foreign key automatically defined" do
       adventure.members.create.adventure_id.should == 3
     end

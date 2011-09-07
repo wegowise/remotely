@@ -94,7 +94,7 @@ module Remotely
       #   model object is returned, otherwise false.
       #
       def create(params={})
-        post uri, params
+        new(params).save
       end
 
       alias :create! :create
@@ -193,13 +193,46 @@ module Remotely
     # Persist this object to the remote API.
     #
     def save
-      return self.class.create(attributes) if new_record?
+      new_record? ? save_new : save_update
+    end
 
-      response = put URL(uri, id), attributes.slice(*savable_attributes)
-      if response.status != 200
-        set_errors (Yajl::Parser.parse(response.body) || {})['errors']
+    # Save an instance that has never been saved before. When the
+    # save succeeds, any attributes sent back by the API will be
+    # merged with the instance. This means it should then have an
+    # id and no longer be a `new_record?`.
+    #
+    # @return [Model, Boolean] Success: model object, Failure: false
+    #
+    def save_new
+      instance = post URL(uri), attributes
+      return false unless instance
+
+      self.attributes.merge!(instance.attributes)
+      set_errors(instance.errors)
+      self
+    end
+
+    # Update an already existing record. Like, `save_new`, any
+    # attributes sent back will be merged into the object.
+    #
+    # In addition to returning false on failure, `save_update` sets 
+    # the `object.errors` collection is created with any errors the 
+    # remote API returned. The remote API should return errors as so:
+    #
+    #   {"errors":{"base":["error message 1", "error message 2"]}}
+    #
+    # @return [Boolean] Success: true, Failure: false
+    #
+    def save_update
+      resp = put URL(uri, id), attributes.slice(*savable_attributes)
+      body = Yajl::Parser.parse(resp.body)
+
+      if resp.status == 200
+        true
+      else
+        set_errors(body.delete("errors")) unless body.nil?
+        false
       end
-      response.status == 200
     end
 
     def savable_attributes
