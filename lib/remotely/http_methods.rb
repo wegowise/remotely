@@ -57,6 +57,9 @@ module Remotely
         b.request  :url_encoded
         b.adapter  :net_http
       end
+
+      @connection.basic_auth(*Remotely.basic_auth) if Remotely.basic_auth
+      @connection
     end
 
     # GET request.

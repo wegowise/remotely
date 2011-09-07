@@ -57,10 +57,21 @@ module Remotely
       apps[name] = url
     end
 
+    # Set the Basic Auth user and password to use when making
+    # requests.
+    #
+    # @param [String] user BasicAuth user
+    # @param [String] password BasicAuth password
+    #
+    def basic_auth(user=nil, password=nil)
+      user and password and @basic_auth = [user, password] or @basic_auth
+    end
+
     # Clear all registered apps
     #
     def reset!
       @apps = {}
+      @basic_auth = nil
     end
   end
 end

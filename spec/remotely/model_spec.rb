@@ -262,6 +262,23 @@ describe Remotely::Model do
     end
   end
 
+  context "basic auth" do
+    after do
+      Remotely.reset!
+    end
+
+    it "sends Authorization headers when basic auth is configured" do
+      Remotely.configure { basic_auth "user", "password" }
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {'Authorization' => "Basic dXNlcjpwYXNzd29yZA=="})
+    end
+
+    it "doesn't send Authorization headers when basic auth is not configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {})
+    end
+  end
+
   it "sets the app it belongs to" do
     Adventure.app.should == :adventure_app
   end

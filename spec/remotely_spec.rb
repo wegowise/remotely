@@ -10,6 +10,11 @@ describe Remotely do
     Remotely.apps.should include(:configapp)
   end
 
+  it "configures basic auth parameters" do
+    Remotely.configure { basic_auth "user", "password" }
+    Remotely.basic_auth.should == ["user", "password"]
+  end
+
   it "is resetable" do
     Remotely.configure { app :configapp, "localhost:2222" }
     Remotely.reset!
