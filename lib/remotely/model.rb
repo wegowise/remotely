@@ -148,7 +148,7 @@ module Remotely
       end
     end
 
-    def_delegators :"self.class", :uri, :get, :post, :put
+    def_delegators :"self.class", :uri, :get, :post, :put, :parse_response
 
     # @return [Hash] Key-value of attributes and values.
     attr_accessor :attributes
