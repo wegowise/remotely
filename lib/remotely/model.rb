@@ -218,7 +218,7 @@ module Remotely
       resp = public_send(method, url, attrs)
       body = Yajl::Parser.parse(resp.body)
 
-      if resp.status == status
+      if resp.status == status && !body.nil?
         self.attributes.merge!(body.symbolize_keys)
         self
       else
