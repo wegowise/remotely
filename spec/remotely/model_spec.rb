@@ -263,6 +263,10 @@ describe Remotely::Model do
   end
 
   context "basic auth" do
+    before do
+      Remotely.configure { app :adventure_app, "http://localhost:3000" }
+    end
+
     after do
       Remotely.reset!
     end
@@ -338,6 +342,21 @@ describe Remotely::Model do
 
   it "returns itself from #to_model" do
     subject.to_model.should == subject
+  end
+
+  context "with an app uri" do
+    before do
+      Remotely.app :uri_app, "http://localhost:3000/api"
+      Thing.app :uri_app
+    end
+
+    it "prepends the app uri" do
+      Thing.expand("/members").should == "/api/members"
+    end
+
+    it "doesn't prepend when it's already there" do
+      Thing.expand("/api/members").should == "/api/members"
+    end
   end
 
   context "with errors" do

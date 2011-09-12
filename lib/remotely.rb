@@ -54,7 +54,8 @@ module Remotely
     # @param [String] url URL to the application's API.
     #
     def app(name, url)
-      apps[name] = url
+      url  = URI.parse(url)
+      apps[name] = { base: "#{url.scheme || "http"}://#{url.host}:#{url.port}", uri: url.path }
     end
 
     # Set the Basic Auth user and password to use when making

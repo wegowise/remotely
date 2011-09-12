@@ -50,7 +50,7 @@ module Remotely
     # @return [Faraday::Connection] Connection to the remote API.
     #
     def remotely_connection
-      address = Remotely.apps[app]
+      address = Remotely.apps[app][:base]
       address = "http://#{address}" unless address =~ /^http/
 
       @connection ||= Faraday::Connection.new(address) do |b|
@@ -72,6 +72,7 @@ module Remotely
     #   parsed response body.
     #
     def get(uri, options={})
+      uri    = expand(uri)
       klass  = options.delete(:class)
       parent = options.delete(:parent)
       before_request(uri, :get, options)
@@ -92,6 +93,7 @@ module Remotely
     #   parsed response body.
     #
     def post(uri, options={})
+      uri    = expand(uri)
       klass  = options.delete(:class)
       parent = options.delete(:parent)
       body   = options.delete(:body) || Yajl::Encoder.encode(options)
@@ -109,6 +111,7 @@ module Remotely
     #   200-299 response code)
     #
     def put(uri, options={})
+      uri  = expand(uri)
       body = options.delete(:body) || Yajl::Encoder.encode(options)
 
       before_request(uri, :put, body)
@@ -123,8 +126,24 @@ module Remotely
     #   200-299 response code)
     #
     def http_delete(uri)
+      uri = expand(uri)
       before_request(uri, :delete)
       SUCCESS_STATUSES.include?(remotely_connection.delete(uri).status)
+    end
+
+    # Expand a URI to include any path specified in the the main app
+    # configuration. When creating a Faraday object with a path that
+    # includes a uri, eg: "localhost:1234/api", Faraday drops the path,
+    # making it "localhost:1234". We need to add the "/api" back in
+    # before our relative uri.
+    #
+    # @example
+    #   Remotely.configure { app :thingapp, "http://example.com/api" }
+    #   Model.expand("/members") # => "/api/members"
+    #
+    def expand(uri)
+      baseuri = Remotely.apps[app][:uri]
+      uri =~ /^#{baseuri}/ ? uri : URL(baseuri, uri)
     end
 
     # Gets called before a request. Override to add logging, etc.
