@@ -220,11 +220,11 @@ module Remotely
 
       if resp.status == status && !body.nil?
         self.attributes.merge!(body.symbolize_keys)
-        self
       else
         set_errors(body.delete("errors")) unless body.nil?
-        false
       end
+
+      self
     end
 
     def savable_attributes
