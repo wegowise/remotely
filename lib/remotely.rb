@@ -28,6 +28,15 @@ module Remotely
     MESSAGE = "has_many associations can use the :foreign_key option."
   end
 
+  class NonJsonResponseError < RemotelyError
+    MESSAGE = "Received an HTML response. Expected JSON."
+    attr_reader :body
+
+    def initialize(body)
+      @body = body
+    end
+  end
+
   class << self
     # @return [Hash] Hash of registered apps (key: name, value: URL)
     def apps

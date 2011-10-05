@@ -72,11 +72,14 @@ module Remotely
     #   parsed response body.
     #
     def get(uri, options={})
-      uri    = expand(uri)
-      klass  = options.delete(:class)
-      parent = options.delete(:parent)
+      uri      = expand(uri)
+      klass    = options.delete(:class)
+      parent   = options.delete(:parent)
+
       before_request(uri, :get, options)
-      parse_response(remotely_connection.get { |req| req.url(uri, options) }, klass, parent)
+
+      response = remotely_connection.get { |req| req.url(uri, options) }
+      parse_response(raise_if_html(response), klass, parent)
     end
 
     # POST request.
@@ -99,7 +102,7 @@ module Remotely
       body   = options.delete(:body) || Yajl::Encoder.encode(options)
 
       before_request(uri, :post, body)
-      remotely_connection.post(uri, body)
+      raise_if_html(remotely_connection.post(uri, body))
     end
 
     # PUT request.
@@ -115,7 +118,7 @@ module Remotely
       body = options.delete(:body) || Yajl::Encoder.encode(options)
 
       before_request(uri, :put, body)
-      remotely_connection.put(uri, body)
+      raise_if_html(remotely_connection.put(uri, body))
     end
 
     # DELETE request.
@@ -128,7 +131,8 @@ module Remotely
     def http_delete(uri)
       uri = expand(uri)
       before_request(uri, :delete)
-      SUCCESS_STATUSES.include?(remotely_connection.delete(uri).status)
+      response = raise_if_html(remotely_connection.delete(uri))
+      SUCCESS_STATUSES.include?(response.status)
     end
 
     # Expand a URI to include any path specified in the the main app
@@ -152,6 +156,13 @@ module Remotely
         puts "-> #{http_verb.to_s.upcase} #{uri}" 
         puts "   #{options.inspect}"
       end
+    end
+
+    def raise_if_html(response)
+      if response.body =~ %r(<html>)
+        raise Remotely::NonJsonResponseError.new(response.body)
+      end
+      response
     end
 
     # Parses the response depending on what was returned. The following
