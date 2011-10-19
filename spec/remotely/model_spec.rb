@@ -73,9 +73,10 @@ describe Remotely::Model do
       Adventure.create(attrs).name.should == "Marceline Quest"
     end
 
-    it "returns false when the creation fails" do
-      stub_request(:post, %r[/adventures]).to_return(status: 500)
-      Adventure.create(attrs).should be_false
+    it "returns an instance with errors when the creation fails" do
+      body = Yajl.dump({errors: {base: ["error"]}})
+      stub_request(:post, %r[/adventures]).to_return(status: 500, body: body)
+      Adventure.create(attrs).errors[:base].should include("error")
     end
   end
 
@@ -158,12 +159,6 @@ describe Remotely::Model do
         Adventure.new(attributes).save.should be_a Adventure
       end
 
-      it "returns false when the save fails" do
-        adventure = Adventure.new(attributes)
-        stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
-        adventure.save.should == false
-      end
-
       it "sets errors when a save fails" do
         adventure = Adventure.new(attributes)
         stub_request(:put, %r[/adventures/1]).to_return(status: 409, body: to_json({errors: {base: %w{this failed}}}))
@@ -180,9 +175,10 @@ describe Remotely::Model do
         adventure.id.should == 2
       end
 
-      it "returns false on failure" do
-        stub_request(:post, %r(/adventures)).to_return(status: 409)
-        Adventure.new(name: "name").save.should == false
+      it "sets errors on a failure" do
+        body = Yajl.dump({errors: {base: ["error"]}})
+        stub_request(:post, %r(/adventures)).to_return(status: 409, body: body)
+        Adventure.new(name: "name").save.errors.should_not be_empty
       end
     end
   end
@@ -218,13 +214,16 @@ describe Remotely::Model do
       subject.update_attributes(updates).should be_true
     end
 
-    it "returns false on failure" do
-      stub_request(:put, %r[/adventures/1]).to_return(status: 500)
-      subject.update_attributes(updates).should be_false
+    it "sets errors on failure" do
+      body = Yajl.dump({errors: {base: ["error"]}})
+      stub_request(:put, %r[/adventures/1]).to_return(status: 500, body: body)
+      subject.update_attributes(updates)
+      subject.errors[:base].should include("error")
     end
 
     it "reverts the object's attributes if the save fails" do
-      stub_request(:put, %r[/adventures/1]).to_return(status: 500)
+      body = Yajl.dump({errors: {base: ["error"]}})
+      stub_request(:put, %r[/adventures/1]).to_return(status: 500, body: body)
       subject.update_attributes(updates)
       subject.type.should == "MATHEMATICAL!"
     end

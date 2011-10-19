@@ -182,7 +182,7 @@ module Remotely
       @attribute_cache = self.attributes.dup
       self.attributes.merge!(attrs.symbolize_keys)
 
-      if save
+      if save && self.errors.empty?
         true
       else
         self.attributes = @attribute_cache
