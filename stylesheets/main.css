@@ -1,0 +1,131 @@
+body {
+  background: #EEEEEE;
+  padding: 25px 0;
+  font: 16px "Helvetica Neue", Helvetica, sans-serif;
+  color: #666666;
+}
+
+.clear {
+  height: 0;
+  clear: both;
+}
+
+#wrap {
+  width: 725px;
+  margin: 0 auto;
+}
+
+pre.clouds {
+  background: #F4F4F4 !important;
+  border-radius: 6px;
+  border: 1px solid #D6D6D6;
+  box-shadow: inset 2px 2px 3px #E5E5E5;
+  font: 14px Monaco, monospace;
+  margin: 10px 0;
+  padding: 10px 15px;
+}
+
+h1 {
+  text-indent: -9999px;
+  background: url("../images/satellite.png") no-repeat;
+  height: 285px;
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 30px;
+  margin: 35px 0 20px 0;
+  color: #444444;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #DDDDDD;
+}
+
+h2 small {
+  font-size: 18px;
+  font-weight: normal;
+  color: #BBBBBB;
+}
+
+h3 {
+  font-size: 22px;
+  margin: 0;
+  color: #999999;
+}
+
+h2, h3 {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-weight: bold;
+}
+
+h2 + p, h3 + p {
+  margin-top: 0;
+}
+
+p {
+  margin: 10px 0 25px 0;
+  line-height: 28px;
+}
+
+blockquote#intro {
+  color: #999999;
+  text-shadow: 1px 1px 0 #EEEEEE;
+  margin: -40px 0 50px 0;
+  border-radius: 8px;
+}
+
+.half-column {
+  width: 350px;
+  float: left;
+  margin-right: 25px;
+}
+
+.half-column.last {
+  margin-right: 0;
+}
+
+table {
+  width: 100%;
+  border: 1px solid #DDDDDD;
+  border-radius: 6px;
+  border-collapse: separate;
+  border-spacing: 0;
+  empty-cells: none;
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr th {
+  border-right: 1px solid #C6C6C6;
+  border-bottom: 1px solid #C6C6C6;
+  text-align: left;
+  padding: 10px;
+  background-image: -webkit-linear-gradient(top, #EEEEEE, #CCCCCC);
+}
+
+table tr th:last-child {
+  border-right: none;
+}
+
+table tr td.heading {
+  background: #DDDDDD;
+  padding: 5px 10px;
+  color: #AAAAAA;
+}
+
+table tr:nth-child(even) {
+  background: #E8E8E8;
+}
+
+table td {
+  border-bottom: 1px solid #DDDDDD;
+  border-right: 1px solid #DDDDDD;
+  padding: 10px;
+}
+
+table tr td:last-child {
+  border-right: none;
+}
+
+
