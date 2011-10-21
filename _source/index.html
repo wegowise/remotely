@@ -1,3 +1,6 @@
+---
+title: Remotely - API backed models and associations.
+---
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,17 +32,17 @@
     <div class="half-column">
       <h3>Rubygems</h3>
 
-      <pre class="tomorrownight">
-gem install remotely
-</pre>
+      {% uv shell-unix-generic %}
+        gem install remotely
+      {% enduv %}
     </div>
 
     <div class="half-column last">
       <h3>Bundler</h3>
 
-      <pre class="tomorrownight">
-gem remotely
-</pre>
+      {% uv ruby %}
+        gem remotely
+      {% enduv %}
     </div>
 
     <div class="clear"></div>
@@ -51,13 +54,13 @@ gem remotely
       can also specify the Basic Auth credentials for those applications, if need be. 
     </p>
 
-    <pre class="tomorrownight">
-<span class="Comment"><span class="Comment">#</span> config/initializers/remotely.rb</span>
-<span class="ClassSupport">Remotely</span><span class="FunctionSpecialMethodBlockLevel"><span class="FunctionSpecialMethodBlockLevel">.</span><span class="FunctionSpecialMethodBlockLevel">configure</span></span> <span class="KeywordStorage">do</span>
-  app <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>dealer</span>, <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span>http://dealership.com/api<span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span></span>
-  basic_auth user, password
-<span class="KeywordStorage">end</span>
-</pre>
+    {% uv ruby %}
+      # config/initializers/remotely.rb
+      Remotely.configure do
+        app :dealer, "http://dealership.com/api"
+        basic_auth user, password
+      end
+    {% enduv %}
 
 
     <h2>Models <small>Defining Model Classes</small></h2>
@@ -69,12 +72,12 @@ gem remotely
       in a bit)</small>.
     </p>
 
-    <pre class="tomorrownight">
-<span class="KeywordStorage">class</span> <span class="ClassSupport">Car<span class="StringSymbolsInheritedClassMarkupHeading"> <span class="StringSymbolsInheritedClassMarkupHeading">&lt;</span> Remotely::Model</span></span>
-  app <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>dealer</span>
-  uri <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span>/cars<span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span></span>
-<span class="KeywordStorage">end</span>
-</pre>
+    {% uv ruby %}
+      class Car < Remotely::Model
+        app :dealer
+        uri "/cars"
+      end
+    {% enduv %}
 
     <h2>Endpoint Conventions <small>Methods and their respective URI</small></h2>
 
@@ -123,13 +126,13 @@ gem remotely
 
     <h2>Associations <small>Connecting models and resources</small></h2>
 
-    <pre class="tomorrownight">
-<span class="KeywordStorage">class</span> <span class="ClassSupport">Book<span class="StringSymbolsInheritedClassMarkupHeading"> <span class="StringSymbolsInheritedClassMarkupHeading">&lt;</span> ActiveRecord::Base</span></span>
-  belongs_to_remote <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>library</span>
-  has_many_remote   <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>pages</span>
-  has_one_remote    <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>publisher</span>
-<span class="KeywordStorage">end</span>
-</pre>
+    {% uv ruby %}
+      class Book < ActiveRecord::Base
+        belongs_to_remote :library
+        has_many_remote   :pages
+        has_one_remote    :publisher
+      end
+    {% enduv %}
 
     <p>
       The following table explains how Remotely fetches remote associations.

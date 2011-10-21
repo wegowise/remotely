@@ -1,0 +1,47 @@
+pre.tomorrownight {
+   color: #C5C8C6;
+   background-color: #1D1F21;
+}
+pre.tomorrownight .line-numbers {
+   background-color: #373B41;
+   color: #FFFFFF;
+}
+pre.tomorrownight .Comment {
+   color: #969896;
+}
+pre.tomorrownight .Foreground {
+   color: #CED1CF;
+}
+pre.tomorrownight .VariableStringLinkRegularExpressionTagName {
+   color: #CC6666;
+}
+pre.tomorrownight .NumberConstantFunctionArgumentTagAttributeEmbedded {
+   color: #DE935F;
+}
+pre.tomorrownight .ClassSupport {
+   color: #F0C674;
+}
+pre.tomorrownight .StringSymbolsInheritedClassMarkupHeading {
+   color: #B5BD68;
+}
+pre.tomorrownight .OperatorMisc {
+   color: #8ABEB7;
+}
+pre.tomorrownight .FunctionSpecialMethodBlockLevel {
+   color: #81A2BE;
+}
+pre.tomorrownight .KeywordStorage {
+   color: #B294BB;
+}
+pre.tomorrownight .Invalid {
+   color: #CED2CF;
+   background-color: #DF5F5F;
+}
+pre.tomorrownight .Separator {
+   color: #CED2CF;
+   background-color: #82A3BF;
+}
+pre.tomorrownight .Deprecated {
+   color: #CED2CF;
+   background-color: #B798BF;
+}
