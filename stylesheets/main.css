@@ -24,6 +24,18 @@ pre.tomorrownight {
   padding: 10px 15px;
 }
 
+#source {
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 149px;
+  height: 149px;
+  background: url("../images/forkme.png") no-repeat;
+  color: #666666;
+  text-indent: -99999px;
+}
+
 h1 {
   text-indent: -9999px;
   background: url("../images/satellite.png") no-repeat;
