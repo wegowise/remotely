@@ -156,7 +156,7 @@ describe Remotely::Model do
       end
 
       it "returns true when the save succeeds" do
-        Adventure.new(attributes).save.should be_a Adventure
+        Adventure.new(attributes).save.should be_true
       end
 
       it "sets errors when a save fails" do
@@ -168,8 +168,8 @@ describe Remotely::Model do
     end
 
     context "when creating" do
+      let!(:adventure) { Adventure.new(name: "To Be Saved...") }
       it "merges in the response body to attributes on success" do
-        adventure = Adventure.new(name: "To Be Saved...")
         stub_request(:post, %r(/adventures)).to_return(body: to_json(attributes.merge(name: "To Be Saved...", id: 2)), status: 201)
         adventure.save
         adventure.id.should == 2
@@ -178,7 +178,8 @@ describe Remotely::Model do
       it "sets errors on a failure" do
         body = Yajl.dump({errors: {base: ["error"]}})
         stub_request(:post, %r(/adventures)).to_return(status: 409, body: body)
-        Adventure.new(name: "name").save.errors.should_not be_empty
+        adventure.save
+        adventure.errors.should_not be_empty
       end
     end
   end
@@ -219,13 +220,6 @@ describe Remotely::Model do
       stub_request(:put, %r[/adventures/1]).to_return(status: 500, body: body)
       subject.update_attributes(updates)
       subject.errors[:base].should include("error")
-    end
-
-    it "reverts the object's attributes if the save fails" do
-      body = Yajl.dump({errors: {base: ["error"]}})
-      stub_request(:put, %r[/adventures/1]).to_return(status: 500, body: body)
-      subject.update_attributes(updates)
-      subject.type.should == "MATHEMATICAL!"
     end
   end
 

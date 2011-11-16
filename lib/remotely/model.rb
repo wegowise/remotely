@@ -94,7 +94,7 @@ module Remotely
       #   model object is returned, otherwise false.
       #
       def create(params={})
-        new(params).save
+        new(params).tap { |n| n.save }
       end
 
       alias :create! :create
@@ -179,15 +179,8 @@ module Remotely
     # @return [Boolean] Did the save succeed.
     #
     def update_attributes(attrs={})
-      @attribute_cache = self.attributes.dup
       self.attributes.merge!(attrs.symbolize_keys)
-
-      if save && self.errors.empty?
-        true
-      else
-        self.attributes = @attribute_cache
-        false
-      end
+      save
     end
 
     # Persist this object to the remote API.
@@ -205,8 +198,8 @@ module Remotely
     #
     #   {"errors":{"attribute":["message", "message"]}}
     #
-    # @return [Boolean, Model] 
-    #   Remote API returns 200/201 status:   the new/updated model object
+    # @return [Boolean] 
+    #   Remote API returns 200/201 status:   true
     #   Remote API returns any other status: false
     #
     def save
@@ -220,11 +213,11 @@ module Remotely
 
       if resp.status == status && !body.nil?
         self.attributes.merge!(body.symbolize_keys)
+        true
       else
         set_errors(body.delete("errors")) unless body.nil?
+        false
       end
-
-      self
     end
 
     def savable_attributes
