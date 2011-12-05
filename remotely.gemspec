@@ -25,6 +25,6 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency "activesupport"
   gem.add_dependency "activemodel"
-  gem.add_dependency "faraday",   "~> 0.7.4"
-  gem.add_dependency "yajl-ruby", "~> 0.8.2"
+  gem.add_dependency "faraday"
+  gem.add_dependency "yajl-ruby"
 end
