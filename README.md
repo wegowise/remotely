@@ -3,11 +3,16 @@
 Remotely lets you specify associations for your models that should
 be fetched from a remote API instead of the database.
 
-## App Setup
+## Configuration
 
 Apps are where Remotely goes to find association resources. You can define as many as you want, but if you define only one, you can omit the `:app` option from your associations.
 
-    Remotely.app :legsapp, "http://omgsomanylegs.com/api/v1"
+    Remotely.configure do
+      app :legsapp do
+        url "http://somanylegs.com/api/v1"
+        basic_auth "username", "password"
+      end
+    end
 
 ## Defining Associations
 
@@ -35,6 +40,23 @@ Apps are where Remotely goes to find association resources. You can define as ma
 
     class Millepied < ActiveRecord::Base
       has_many_remote :legs, :app => :legsapp, ...
+    end
+
+**Note about associations**
+
+If you do not specify the `:app` options in your associations, you need
+to create a `Remotely::Model` subclass for the associated object. This
+is so Remotely knows which app to use to retrieve entries of that type.
+
+    class Person < ActiveRecord::Base
+      has_many_remote :legs
+    end
+
+    # Means the following must exist:
+
+    class Leg < Remotely::Model
+      app :legsapp
+      uri "/legs"
     end
 
 ### id Substitution
