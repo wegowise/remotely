@@ -5,6 +5,7 @@ class URL
     @url = "/" + args.flatten.compact.join("/")
     @url.gsub! %r[/{2,}], "/"
     @url.gsub! %r[/$], ""
+    define_delegation_methods
   end
 
   def +(other)
@@ -21,6 +22,20 @@ class URL
 
   def to_s
     @url
+  end
+
+private
+
+  def define_delegation_methods
+    @url.public_methods(false).each do |name|
+      metaclass.class_eval do
+        define_method(name) { |*args| @url.send(name, *args) }
+      end
+    end
+  end
+
+  def metaclass
+    (class << self; self; end)
   end
 end
 

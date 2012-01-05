@@ -4,14 +4,15 @@ require "active_support/inflector"
 require "active_support/concern"
 require "active_support/core_ext/hash"
 require "active_model"
+
 require "remotely/ext/url"
+require "remotely/application"
+require "remotely/http_methods"
+require "remotely/associations"
+require "remotely/model"
+require "remotely/collection"
 
 module Remotely
-  autoload :Collection,   "remotely/collection"
-  autoload :Associations, "remotely/associations"
-  autoload :Model,        "remotely/model"
-  autoload :HTTPMethods,  "remotely/http_methods"
-
   class RemotelyError < StandardError
     def message; self.class::MESSAGE; end
   end
@@ -38,7 +39,7 @@ module Remotely
   end
 
   class << self
-    # @return [Hash] Hash of registered apps (key: name, value: URL)
+    # @return [Hash] Registered application configurations
     def apps
       @apps ||= {}
     end
@@ -61,27 +62,20 @@ module Remotely
     #
     # @param [Symbol] name Placeholder name for the application.
     # @param [String] url URL to the application's API.
+    # @param [Block]  Block defining the attributes of the application.
     #
-    def app(name, url)
-      url  = URI.parse(url)
-      apps[name] = { base: "#{url.scheme || "http"}://#{url.host}:#{url.port}", uri: url.path }
-    end
-
-    # Set the Basic Auth user and password to use when making
-    # requests.
-    #
-    # @param [String] user BasicAuth user
-    # @param [String] password BasicAuth password
-    #
-    def basic_auth(user=nil, password=nil)
-      user and password and @basic_auth = [user, password] or @basic_auth
+    def app(name, url=nil, &block)
+      if !url && block_given?
+        apps[name] = Application.new(name, &block)
+      else
+        apps[name] = Application.new(name) { url(url) }
+      end
     end
 
     # Clear all registered apps
     #
     def reset!
       @apps = {}
-      @basic_auth = nil
     end
   end
 end

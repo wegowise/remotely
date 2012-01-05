@@ -12,6 +12,10 @@ module Remotely
     # Set or get the app for this model belongs to. If name is passed,
     # it's a setter, otherwise, a getter.
     #
+    # In getter form, if a model didn't declare which app it is
+    # associated with and there is only one registered app, it
+    # will default to that app.
+    #
     # @overload app()
     #   Gets the current `app` value.
     #
@@ -22,11 +26,7 @@ module Remotely
     # @return [Symbol] New app symbol or current value.
     #
     def app(name=nil)
-      if @app.nil? && name.nil? && Remotely.apps.size == 1
-        name = Remotely.apps.first.first
-      end
-
-      (name and @app = name) or @app
+      @app = (@app || Remotely.apps[name] || only_registered_app)
     end
 
     # Set or get the base uri for this model. If name is passed,
@@ -42,24 +42,7 @@ module Remotely
     # @return [String] New uri or current value.
     #
     def uri(path=nil)
-      (path and @uri = path) or @uri
-    end
-
-    # The connection to the remote API.
-    #
-    # @return [Faraday::Connection] Connection to the remote API.
-    #
-    def remotely_connection
-      address = Remotely.apps[app][:base]
-      address = "http://#{address}" unless address =~ /^http/
-
-      @connection ||= Faraday::Connection.new(address) do |b|
-        b.request  :url_encoded
-        b.adapter  :net_http
-      end
-
-      @connection.basic_auth(*Remotely.basic_auth) if Remotely.basic_auth
-      @connection
+      @uri = (@uri || path)
     end
 
     # GET request.
@@ -71,14 +54,14 @@ module Remotely
     #   is an array, Collection, if it's a hash, Model, otherwise it's the
     #   parsed response body.
     #
-    def get(uri, options={})
-      uri      = expand(uri)
+    def get(path, options={})
+      path     = expand(path)
       klass    = options.delete(:class)
       parent   = options.delete(:parent)
 
-      before_request(uri, :get, options)
+      before_request(path, :get, options)
 
-      response = remotely_connection.get { |req| req.url(uri, options) }
+      response = app.connection.get { |req| req.url(path, options) }
       parse_response(raise_if_html(response), klass, parent)
     end
 
@@ -95,14 +78,14 @@ module Remotely
     #   is an array, Collection, if it's a hash, Model, otherwise it's the
     #   parsed response body.
     #
-    def post(uri, options={})
-      uri    = expand(uri)
+    def post(path, options={})
+      path   = expand(path)
       klass  = options.delete(:class)
       parent = options.delete(:parent)
       body   = options.delete(:body) || Yajl::Encoder.encode(options)
 
-      before_request(uri, :post, body)
-      raise_if_html(remotely_connection.post(uri, body))
+      before_request(path, :post, body)
+      raise_if_html(app.connection.post(path, body))
     end
 
     # PUT request.
@@ -113,12 +96,12 @@ module Remotely
     # @return [Boolean] Was the request successful? (Resulted in a
     #   200-299 response code)
     #
-    def put(uri, options={})
-      uri  = expand(uri)
+    def put(path, options={})
+      path = expand(path)
       body = options.delete(:body) || Yajl::Encoder.encode(options)
 
-      before_request(uri, :put, body)
-      raise_if_html(remotely_connection.put(uri, body))
+      before_request(path, :put, body)
+      raise_if_html(app.connection.put(path, body))
     end
 
     # DELETE request.
@@ -128,29 +111,30 @@ module Remotely
     # @return [Boolean] Was the resource deleted? (Resulted in a
     #   200-299 response code)
     #
-    def http_delete(uri)
-      uri = expand(uri)
-      before_request(uri, :delete)
-      response = raise_if_html(remotely_connection.delete(uri))
+    def http_delete(path)
+      path = expand(path)
+      before_request(path, :delete)
+      response = raise_if_html(app.connection.delete(path))
       SUCCESS_STATUSES.include?(response.status)
     end
 
-    # Expand a URI to include any path specified in the the main app
-    # configuration. When creating a Faraday object with a path that
-    # includes a uri, eg: "localhost:1234/api", Faraday drops the path,
-    # making it "localhost:1234". We need to add the "/api" back in
-    # before our relative uri.
+    # Remove the leading slash because Faraday considers
+    # it to be absolute path and ignores any prefixes. eg:
+    #
+    #   c = Faraday::Connection.new("http://foo.com/api")
+    #   c.get("users")  # => /api/users (Good)
+    #   c.get("/users") # => /users     (Bad)
     #
     # @example
     #   Remotely.configure { app :thingapp, "http://example.com/api" }
-    #   Model.expand("/members") # => "/api/members"
+    #   Model.expand("/members") # => "members"
     #
-    def expand(uri)
-      baseuri = Remotely.apps[app][:uri]
-      uri =~ /^#{baseuri}/ ? uri : URL(baseuri, uri)
+    def expand(path)
+      path.gsub(%r(^/), "")
     end
 
     # Gets called before a request. Override to add logging, etc.
+    #
     def before_request(uri, http_verb = :get, options = {})
       if ENV['REMOTELY_DEBUG']
         puts "-> #{http_verb.to_s.upcase} #{uri}" 
@@ -200,6 +184,12 @@ module Remotely
       else
         body
       end
+    end
+
+  private
+
+    def only_registered_app
+      Remotely.apps.size == 1 ? Remotely.apps.first.last : nil
     end
   end
 end

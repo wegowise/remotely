@@ -1,6 +1,8 @@
 require "ostruct"
 
-Remotely.app :adventure_app, "http://localhost:1234"
+Remotely.configure do
+  app :adventure_app, "http://localhost:1234"
+end
 
 class BaseTestClass < OpenStruct
   extend  ActiveModel::Naming

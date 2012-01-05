@@ -193,7 +193,7 @@ module Remotely
     end
 
   private
-  
+
     def can_fetch_remotely_association?(name)
       opts = remote_associations[name]
 

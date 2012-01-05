@@ -5,19 +5,24 @@ describe Remotely do
     Remotely.reset!
   end
 
-  it "is configurable" do
-    Remotely.configure { app :configapp, "localhost:2222" }
-    Remotely.apps.should include(:configapp)
-  end
-
-  it "configures basic auth parameters" do
-    Remotely.configure { basic_auth "user", "password" }
-    Remotely.basic_auth.should == ["user", "password"]
-  end
-
   it "is resetable" do
     Remotely.configure { app :configapp, "localhost:2222" }
     Remotely.reset!
     Remotely.apps.should be_empty
+  end
+
+  it "is configurable with the old, non-block style" do
+    Remotely.configure { app :configapp, "localhost:2222" }
+    Remotely.apps[:configapp].url.should == "http://localhost:2222"
+  end
+
+  it "is configurable with a block" do
+    Remotely.configure { app(:configapp) { url "localhost:2222" } }
+    Remotely.apps[:configapp].url.should == "http://localhost:2222"
+  end
+
+  it "saves the basic auth credentials" do
+    Remotely.configure { app(:appname) { basic_auth "user", "pass" }}
+    Remotely.apps[:appname].basic_auth.should == ["user", "pass"]
   end
 end

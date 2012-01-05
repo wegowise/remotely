@@ -257,7 +257,12 @@ describe Remotely::Model do
 
   context "basic auth" do
     before do
-      Remotely.configure { app :adventure_app, "http://localhost:3000" }
+      Remotely.configure do
+        app :adventure_app do
+          url "http://localhost:3000"
+          basic_auth "user", "password"
+        end
+      end
     end
 
     after do
@@ -265,7 +270,6 @@ describe Remotely::Model do
     end
 
     it "sends Authorization headers when basic auth is configured" do
-      Remotely.configure { basic_auth "user", "password" }
       Adventure.find(1)
       a_request(:get, "#{app}/adventures/1").with(headers: {'Authorization' => "Basic dXNlcjpwYXNzd29yZA=="})
     end
@@ -277,7 +281,7 @@ describe Remotely::Model do
   end
 
   it "sets the app it belongs to" do
-    Adventure.app.should == :adventure_app
+    Adventure.app.name.should == :adventure_app
   end
 
   it "sets the uri to itself" do
@@ -285,7 +289,7 @@ describe Remotely::Model do
   end
 
   it "has a connection" do
-    Adventure.remotely_connection.should be_a Faraday::Connection
+    Adventure.app.connection.should be_a Faraday::Connection
   end
 
   it "supports ActiveModel::Naming methods" do
@@ -343,12 +347,8 @@ describe Remotely::Model do
       Thing.app :uri_app
     end
 
-    it "prepends the app uri" do
-      Thing.expand("/members").should == "/api/members"
-    end
-
-    it "doesn't prepend when it's already there" do
-      Thing.expand("/api/members").should == "/api/members"
+    it "removes leading slash to work with Faraday's path_prefix" do
+      Thing.expand("/members").should == "members"
     end
   end
 
