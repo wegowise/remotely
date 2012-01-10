@@ -56,8 +56,10 @@ gem remotely
     <pre class="tomorrownight">
 <span class="Comment"><span class="Comment">#</span> config/initializers/remotely.rb</span>
 <span class="ClassSupport">Remotely</span><span class="FunctionSpecialMethodBlockLevel"><span class="FunctionSpecialMethodBlockLevel">.</span><span class="FunctionSpecialMethodBlockLevel">configure</span></span> <span class="KeywordStorage">do</span>
-  app <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>dealer</span>, <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span>http://dealership.com/api<span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span></span>
-  basic_auth user, password
+  app <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">:</span>dealer</span> <span class="KeywordStorage">do</span>
+    url <span class="StringSymbolsInheritedClassMarkupHeading"><span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span>http://dealership.com/api<span class="StringSymbolsInheritedClassMarkupHeading">&quot;</span></span>
+    basic_auth user, password
+  <span class="KeywordStorage">end</span>
 <span class="KeywordStorage">end</span>
 </pre>
 

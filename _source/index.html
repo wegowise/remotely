@@ -59,8 +59,10 @@ title: Remotely - API backed models and associations.
     {% uv ruby %}
       # config/initializers/remotely.rb
       Remotely.configure do
-        app :dealer, "http://dealership.com/api"
-        basic_auth user, password
+        app :dealer do
+          url "http://dealership.com/api"
+          basic_auth user, password
+        end
       end
     {% enduv %}
 
