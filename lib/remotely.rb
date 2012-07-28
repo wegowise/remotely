@@ -4,6 +4,7 @@ require "active_support/inflector"
 require "active_support/concern"
 require "active_support/core_ext/hash"
 require "active_model"
+require "yajl"
 
 require "remotely/ext/url"
 require "remotely/application"
