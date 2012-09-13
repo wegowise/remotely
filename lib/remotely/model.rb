@@ -209,7 +209,7 @@ module Remotely
       url    = new_record? ? uri        : URL(uri, id)
 
       resp = public_send(method, url, attrs)
-      body = Yajl::Parser.parse(resp.body)
+      body = MultiJson.load(resp.body)
 
       if resp.status == status && !body.nil?
         self.attributes.merge!(body.symbolize_keys)
@@ -268,7 +268,7 @@ module Remotely
     end
 
     def to_json
-      Yajl::Encoder.encode(self.attributes)
+      MultiJson.dump(self.attributes)
     end
 
   private

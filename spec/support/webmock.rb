@@ -31,8 +31,8 @@ module WebmockHelpers
   end
 
   def stub(method, url, response={})
-    unless response.is_a?(Proc)
-      response[:body]    = Yajl::Encoder.encode(response[:body])
+    unless response.is_a?(Proc) || response[:body].is_a?(Proc)
+      response[:body]    = MultiJson.dump(response[:body])
       response[:headers] = { "Content-Type" => "application/json" }
     end
     stub_request(method, url).to_return(response)

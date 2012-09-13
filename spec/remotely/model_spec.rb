@@ -74,14 +74,14 @@ describe Remotely::Model do
     end
 
     it "returns an instance with errors when the creation fails" do
-      body = Yajl.dump({errors: {base: ["error"]}})
+      body = MultiJson.dump({errors: {base: ["error"]}})
       stub_request(:post, %r[/adventures]).to_return(status: 500, body: body)
       Adventure.create(attrs).errors[:base].should include("error")
     end
   end
 
   describe ".find_or_" do
-    let(:body)         { Yajl::Encoder.encode([{id: 1, name: "BubbleGum"}]) }
+    let(:body)         { MultiJson.dump([{id: 1, name: "BubbleGum"}]) }
     let(:stub_success) { stub_request(:get, "#{app}/adventures/search?name=BubbleGum").to_return(body: body) }
     let(:stub_failure) { stub_request(:get, "#{app}/adventures/search?name=BubbleGum").to_return(body: "[]") }
 
@@ -176,7 +176,7 @@ describe Remotely::Model do
       end
 
       it "sets errors on a failure" do
-        body = Yajl.dump({errors: {base: ["error"]}})
+        body = MultiJson.dump({errors: {base: ["error"]}})
         stub_request(:post, %r(/adventures)).to_return(status: 409, body: body)
         adventure.save
         adventure.errors.should_not be_empty
@@ -216,7 +216,7 @@ describe Remotely::Model do
     end
 
     it "sets errors on failure" do
-      body = Yajl.dump({errors: {base: ["error"]}})
+      body = MultiJson.dump({errors: {base: ["error"]}})
       stub_request(:put, %r[/adventures/1]).to_return(status: 500, body: body)
       subject.update_attributes(updates)
       subject.errors[:base].should include("error")

@@ -82,7 +82,7 @@ module Remotely
       path   = expand(path)
       klass  = options.delete(:class)
       parent = options.delete(:parent)
-      body   = options.delete(:body) || Yajl::Encoder.encode(options)
+      body   = options.delete(:body) || MultiJson.dump(options)
 
       before_request(path, :post, body)
       raise_if_html(app.connection.post(path, body))
@@ -98,7 +98,7 @@ module Remotely
     #
     def put(path, options={})
       path = expand(path)
-      body = options.delete(:body) || Yajl::Encoder.encode(options)
+      body = options.delete(:body) || MultiJson.dump(options)
 
       before_request(path, :put, body)
       raise_if_html(app.connection.put(path, body))
@@ -173,7 +173,7 @@ module Remotely
     def parse_response(response, klass=nil, parent=nil)
       return false if response.status >= 400
 
-      body  = Yajl::Parser.parse(response.body) rescue nil
+      body  = MultiJson.load(response.body) rescue nil
       klass = (klass || self)
 
       case body
