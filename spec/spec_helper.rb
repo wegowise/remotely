@@ -7,6 +7,8 @@ require "support/test_classes"
 RSpec.configure do |c|
   c.before do
     WebmockHelpers.stub!
+    Remotely.reset!
+    Remotely.configure { app :adventure_app, "http://localhost:1234" }
   end
 
   def to_json(obj)
