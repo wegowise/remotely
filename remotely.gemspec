@@ -17,11 +17,7 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec", "~> 2.6.0"
-  gem.add_development_dependency "ZenTest"
-  gem.add_development_dependency "autotest-growl"
   gem.add_development_dependency "webmock"
-  gem.add_development_dependency "ruby-debug19"
-  gem.add_development_dependency "ruby-debug-completion"
 
   gem.add_dependency "activesupport"
   gem.add_dependency "activemodel"
