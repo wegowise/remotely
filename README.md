@@ -1,5 +1,7 @@
 # Remotely
 
+[![Build Status](https://secure.travis-ci.org/wegowise/remotely.png)](http://travis-ci.org/wegowise/remotely)
+
 Remotely lets you specify associations for your models that should
 be fetched from a remote API instead of the database.
 
