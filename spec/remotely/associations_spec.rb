@@ -25,7 +25,7 @@ describe Remotely::Associations do
 
     it "requests the correct path" do
       subject.send(assoc)
-      a_request(:get, "#{app}#{path}").should have_been_made
+      a_request(:get, /#{path}/).should have_been_made
     end
   end
 
