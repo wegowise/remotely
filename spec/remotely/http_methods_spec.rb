@@ -22,4 +22,37 @@ describe Remotely::HTTPMethods do
     stub_request(:delete, %r(/things)).to_return(body: "<html><head><title></title></head></html>")
     expect { http_delete("/things") }.to raise_error(Remotely::NonJsonResponseError)
   end
+
+  it "passes the correct headers for post requests" do
+    stub_request(:post, %r(/things)).
+      to_return(body: "{\"key\":\"value\"}")
+
+    post("/things", headers: {'Content-Type'=>'text/plain'})
+
+    a_request(:post, %r(/things)).
+      with(headers: {'Content-Type'=>'text/plain'}).
+      should have_been_made
+  end
+
+  it "defaults the Content-Type header to be application/json" do
+    stub_request(:post, %r(/things)).
+      to_return(body: "{\"key\":\"value\"}")
+
+    post("/things")
+
+    a_request(:post, %r(/things)).
+      with(headers: {'Content-Type'=>'application/json'}).
+      should have_been_made
+  end
+
+  it "passes the correct headers for put requests" do
+    stub_request(:put, %r(/things)).
+      to_return(body: "{\"key\":\"value\"}")
+
+    put("/things", headers: {'Content-Type'=>'application/pdf'})
+
+    a_request(:put, %r(/things)).
+      with(headers: {'Content-Type'=>'application/pdf'}).
+      should have_been_made
+  end
 end

@@ -79,13 +79,15 @@ module Remotely
     #   parsed response body.
     #
     def post(path, options={})
-      path   = expand(path)
-      klass  = options.delete(:class)
-      parent = options.delete(:parent)
-      body   = options.delete(:body) || MultiJson.dump(options)
+      path      = expand(path)
+      klass     = options.delete(:class)
+      parent    = options.delete(:parent)
+      body      = options.delete(:body) || MultiJson.dump(options)
+      headers   = options.delete(:headers) || {}
+      headers['Content-Type'] ||= 'application/json'
 
       before_request(path, :post, body)
-      raise_if_html(app.connection.post(path, body))
+      raise_if_html(app.connection.post(path, body, headers))
     end
 
     # PUT request.
@@ -99,9 +101,11 @@ module Remotely
     def put(path, options={})
       path = expand(path)
       body = options.delete(:body) || MultiJson.dump(options)
+      headers   = options.delete(:headers) || {}
+      headers['Content-Type'] ||= 'application/json'
 
       before_request(path, :put, body)
-      raise_if_html(app.connection.put(path, body))
+      raise_if_html(app.connection.put(path, body, headers))
     end
 
     # DELETE request.
@@ -137,7 +141,7 @@ module Remotely
     #
     def before_request(uri, http_verb = :get, options = {})
       if ENV['REMOTELY_DEBUG']
-        puts "-> #{http_verb.to_s.upcase} #{uri}" 
+        puts "-> #{http_verb.to_s.upcase} #{uri}"
         puts "   #{options.inspect}"
       end
     end
