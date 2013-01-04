@@ -279,6 +279,81 @@ describe Remotely::Model do
       a_request(:get, "#{app}/adventures/1").with(headers: {})
     end
   end
+  
+  context "token auth" do
+    before do
+      Remotely.configure do
+        app :adventure_app do
+          url "http://localhost:3000"
+          token_auth "token", {:foo => :bar}
+        end
+      end
+    end
+
+    after do
+      Remotely.reset!
+    end
+
+    it "sends Authorization headers when token auth is configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {'Authorization' => "Token token=token foo=bar"})
+    end
+
+    it "doesn't send Authorization headers when token auth is not configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {})
+    end
+  end
+  
+  context "custom authorization as a string" do
+    before do
+      Remotely.configure do
+        app :adventure_app do
+          url "http://localhost:3000"
+          authorization "OAuth", "token=foo"
+        end
+      end
+    end
+
+    after do
+      Remotely.reset!
+    end
+
+    it "sends Authorization headers when custom authorization is configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {'Authorization' => "OAuth token=foo"})
+    end
+
+    it "doesn't send Authorization headers when custom authorization is not configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {})
+    end
+  end
+  
+  context "custom authorization as a hash" do
+    before do
+      Remotely.configure do
+        app :adventure_app do
+          url "http://localhost:3000"
+          authorization "OAuth", {:token => :foo}
+        end
+      end
+    end
+
+    after do
+      Remotely.reset!
+    end
+
+    it "sends Authorization headers when custom authorization is configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {'Authorization' => "OAuth token=foo"})
+    end
+
+    it "doesn't send Authorization headers when custom authorization is not configured" do
+      Adventure.find(1)
+      a_request(:get, "#{app}/adventures/1").with(headers: {})
+    end
+  end
 
   it "sets the app it belongs to" do
     Adventure.app.name.should == :adventure_app

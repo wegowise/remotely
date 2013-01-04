@@ -73,6 +73,59 @@ A path can include "`:id`" anywhere in it, which is replaced by the instance's `
     m.id   # => 1
     m.legs # => Requests "/millepieds/1/legs"
 
+## Authorization
+
+Remotely is setup to allow basic auth, token auth, or custom authentication schemes. 
+
+**Basic Auth**
+
+`basic_auth` accepts 2 String params: `username` and `password`
+	
+    # 'Authorization' header => "Basic dXNlcjpwYXNzd29yZA=="
+    
+    Remotely.configure do
+      app :legsapp do
+        url "http://somanylegs.com/api/v1"
+        basic_auth "username", "password"
+      end
+    end
+    
+**Token Auth**
+
+`token_auth` accepts a String param for the `token`, and an optional Hash of token options
+	
+    # 'Authorization' header => "Token token=\"abcdef\", foo=\"bar\""
+    
+    Remotely.configure do
+      app :legsapp do
+        url "http://somanylegs.com/api/v1"
+        token_auth "abcdef", {:foo => 'bar'}
+      end
+    end
+    
+**Custom Authorization**
+
+`authorization` accepts a String param for the `type`, and either a String or Hash `token`. A String value is taken literally, and a Hash is encoded into comma separated key/value pairs.
+	
+    # 'Authorization' header => "Bearer mF_9.B5f-4.1JqM"
+    
+    Remotely.configure do
+      app :legsapp do
+        url "http://somanylegs.com/api/v1"
+        authorization 'Bearer', 'mF_9.B5f-4.1JqM'
+      end
+    end
+&nbsp;
+
+    # 'Authorization' header => "OAuth token=\"abcdef\", foo=\"bar\""
+    
+    Remotely.configure do
+      app :legsapp do
+        url "http://somanylegs.com/api/v1"
+        authorization 'OAuth', {:token => 'abcdef', :foo => 'bar'}
+      end
+    end
+
 ## Fetched Objects
 
 Remote associations are Remotely::Model objects. Whatever data the API returns, becomes the attributes of the Model.
