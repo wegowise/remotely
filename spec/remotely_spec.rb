@@ -25,4 +25,19 @@ describe Remotely do
     Remotely.configure { app(:appname) { basic_auth "user", "pass" }}
     Remotely.apps[:appname].basic_auth.should == ["user", "pass"]
   end
+  
+  it "saves the token auth credentials" do
+    Remotely.configure { app(:appname) { token_auth "token", {:foo => :bar} }}
+    Remotely.apps[:appname].token_auth.should == ["token", {:foo => :bar}]
+  end
+  
+  it "saves the authorization credentials as a string" do
+    Remotely.configure { app(:appname) { authorization "OAuth", "token=foo" }}
+    Remotely.apps[:appname].authorization.should == [ "OAuth", "token=foo" ]
+  end
+  
+  it "saves the authorization credentials as a hash" do
+    Remotely.configure { app(:appname) { authorization "OAuth", {:token => :foo} }}
+    Remotely.apps[:appname].authorization.should == [ "OAuth", {:token => :foo}]
+  end
 end

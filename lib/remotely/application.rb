@@ -25,6 +25,28 @@ module Remotely
       return @basic_auth unless user && password
       @basic_auth = [user, password]
     end
+    
+    # Set or get the Authorization header.
+    #  - As seen here: https://github.com/lostisland/faraday/blob/master/lib/faraday/connection.rb#L204
+    # 
+    # @param [String] token   - The String token.
+    # @param [Hash]   options - Optional Hash of extra token options.
+    #
+    def token_auth(token=nil, options={})
+      return @token_auth unless token
+      @token_auth = [token, options]
+    end
+    
+    # Set or get a custom Authorization header.
+    #  - As seen here: https://github.com/lostisland/faraday/blob/master/lib/faraday/connection.rb#L227
+    # 
+    # @param [String]       type    - The String authorization type.
+    # @param [String|Hash]  token   - The String or Hash token.  A String value is taken literally, and a Hash is encoded into comma separated key/value pairs.
+    #
+    def authorization(type=nil, token=nil)
+      return @authorization unless type && token
+      @authorization = [type, token]
+    end
 
     # Connection to the application (with BasicAuth if it was set).
     #
@@ -35,8 +57,10 @@ module Remotely
         b.request :url_encoded
         b.adapter :net_http
       end
-
-      @connection.basic_auth(*@basic_auth) if @basic_auth
+      
+      @connection.basic_auth(*@basic_auth)        if @basic_auth
+      @connection.token_auth(*@token_auth)        if @token_auth
+      @connection.authorization(*@authorization)  if @authorization
       @connection
     end
 
