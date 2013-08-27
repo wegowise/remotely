@@ -4,12 +4,12 @@ describe Remotely::HTTPMethods do
   include Remotely::HTTPMethods
 
   it "raises NonJsonResponseError when HTML is returned on GET" do
-    stub_request(:get, %r(/things)).to_return(body: "<html><head><title></title></head></html>")
+    stub_request(:get, %r(/things)).to_return(body: "<html lang='en'><head><title></title></head></html>")
     expect { get("/things") }.to raise_error(Remotely::NonJsonResponseError)
   end
 
   it "raises NonJsonResponseError when HTML is returned on POST" do
-    stub_request(:post, %r(/things)).to_return(body: "<html><head><title></title></head></html>")
+    stub_request(:post, %r(/things)).to_return(body: "<HTML><HEAD><TITLE></TITLE></HEAD></HTML>")
     expect { post("/things") }.to raise_error(Remotely::NonJsonResponseError)
   end
 

@@ -147,7 +147,7 @@ module Remotely
     end
 
     def raise_if_html(response)
-      if response.body =~ %r(<html>)
+      if response.body =~ %r(<html.?*>)i
         raise Remotely::NonJsonResponseError.new(response.body)
       end
       response
