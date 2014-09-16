@@ -59,4 +59,13 @@ describe Remotely::Application do
     end
     app.connection.headers["authorization"].should_not be_nil
   end
+
+  it "has a list of middleware for faraday to use" do
+    CustomMiddleware = Module.new
+    app = Remotely::Application.new(:name) do
+      url           "http://example.com"
+      use_middleware CustomMiddleware, { a: 'a', b: 'b'}
+    end
+    app.connection.builder.handlers.should include(CustomMiddleware)
+  end
 end

@@ -48,12 +48,21 @@ module Remotely
       @authorization = [type, token]
     end
 
+    def use_middleware(klass, options = {})
+      middleware << [klass, options]
+    end
+
+    def middleware
+      @middleware ||= []
+    end
+
     # Connection to the application (with BasicAuth if it was set).
     #
     def connection
       return unless @url
 
       @connection ||= Faraday::Connection.new(@url) do |b|
+        middleware.each { |m, opts| b.use(m, opts) }
         b.request :url_encoded
         b.adapter :net_http
       end
