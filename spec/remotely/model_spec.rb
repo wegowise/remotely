@@ -12,6 +12,10 @@ describe Remotely::Model do
 
     subject { Adventure.new(attrs) }
 
+    it 'should respond to uninitialized attributes defined as saveable' do
+      Adventure.new.name.should == nil
+    end
+
     it "stores which attributes are savable" do
       Adventure.savable_attributes.should == [:name, :type]
     end
