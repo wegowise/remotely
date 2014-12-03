@@ -17,11 +17,10 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec", "~> 2.6.0"
-  gem.add_development_dependency "webmock"
+  gem.add_development_dependency "webmock", '~> 1.18.0'
 
   gem.add_dependency "activesupport"
   gem.add_dependency "activemodel"
-  gem.add_dependency "http", ">= 0.6.0"
   gem.add_dependency "faraday"
   gem.add_dependency "multi_json"
 end
