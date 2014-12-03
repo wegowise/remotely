@@ -6,7 +6,7 @@ platforms :jruby do
 end
 
 group :development, :test do
-  platforms :mri do
+  platforms :ruby_19 do
     gem "debugger"
   end
 

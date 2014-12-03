@@ -21,6 +21,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency "activesupport"
   gem.add_dependency "activemodel"
+  gem.add_dependency "http", ">= 0.6.0"
   gem.add_dependency "faraday"
   gem.add_dependency "multi_json"
 end
