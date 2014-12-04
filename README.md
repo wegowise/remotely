@@ -7,13 +7,22 @@ be fetched from a remote API instead of the database.
 
 ## Configuration
 
-Apps are where Remotely goes to find association resources. You can define as many as you want, but if you define only one, you can omit the `:app` option from your associations.
+Apps are where Remotely goes to find association resources. You can define as many as you want, but if you define only one, you can omit the `:app` option from your associations. Remotely also supports any Faraday middleware, to configure just call `use_middleware` with the class name and options.
 
     Remotely.configure do
       app :legsapp do
         url "http://somanylegs.com/api/v1"
         basic_auth "username", "password"
+        use_middleware Faraday::HttpCache, store: MyCache.new
       end
+    end
+
+    class Millepied < Remotely::Model
+      app :legsapp
+      uri "/legs"
+
+      # Optional - restrict saveable attributes
+      attr_savable :name, :type
     end
 
 ## Defining Associations
