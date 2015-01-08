@@ -1,6 +1,5 @@
 module Remotely
   class Model
-    extend  Forwardable
     extend  ActiveModel::Naming
     include ActiveModel::Conversion
     include Associations
@@ -148,7 +147,7 @@ module Remotely
       end
     end
 
-    def_delegators :"self.class", :uri, :get, :post, :put, :parse_response
+    delegate :uri, :get, :post, :put, :parse_response, to: :"self.class"
 
     # @return [Hash] Key-value of attributes and values.
     attr_accessor :attributes
