@@ -205,7 +205,7 @@ module Remotely
     def save
       method = new_record? ? :post      : :put
       status = new_record? ? 201        : 200
-      attrs  = new_record? ? attributes : attributes.slice(*savable_attributes)
+      attrs  = new_record? ? attributes : attributes.slice(*savable_attributes << :id)
       url    = new_record? ? uri        : URL(uri, id)
 
       resp = public_send(method, url, attrs)
@@ -221,7 +221,7 @@ module Remotely
     end
 
     def savable_attributes
-      (self.class.savable_attributes || attributes.keys) << :id
+      self.class.savable_attributes || attributes.keys
     end
 
     # Sets multiple errors with a hash
@@ -296,7 +296,7 @@ module Remotely
     end
 
     def method_missing(name, *args, &block)
-      if self.attributes.include?(name)
+      if self.attributes.include?(name) || self.savable_attributes.include?(name)
         self.attributes[name]
       elsif name =~ /(.*)=$/ && self.attributes.include?($1.to_sym)
         self.attributes[$1.to_sym] = args.first
