@@ -1,5 +1,6 @@
 sudo: false
 language: ruby
+script: rspec spec
 
 gemfile:
   - gemfiles/rails32.gemfile
