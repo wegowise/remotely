@@ -4,6 +4,7 @@ require File.expand_path('../lib/remotely/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Matte Noble"]
   gem.email         = ["me@mattenoble.com"]
+  gem.license       = 'MIT'
   gem.description   = %q{Remote API based model associations.}
   gem.summary       = %q{Remote API based model associations.}
   gem.homepage      = ''
